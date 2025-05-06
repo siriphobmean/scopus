@@ -251,19 +251,17 @@ function getDocumentTypeFull(pub) {
 function formatContributors(pub) {
     if (pub.detailed_authors && pub.detailed_authors.length > 0) {
         const authorsList = [];
-        
+
         pub.detailed_authors.forEach(author => {
-            const surname = author['ce:surname'] || '';
-            const initialName = author['ce:given-name'] ? author['ce:given-name'].charAt(0) + '.' : '';
-            
-            if (surname) {
-                authorsList.push(`${surname}, ${initialName}`);
+            const indexedName = author['ce:indexed-name'];
+            if (indexedName) {
+                authorsList.push(indexedName);
             }
         });
-        
+
         return authorsList.join('; ');
     }
-    
+
     return pub['dc:creator'] || 'No contributors found';
 }
 
