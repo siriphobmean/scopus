@@ -68,25 +68,24 @@ if (empty($publications)) {
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <style>
-
         body {
             font-family: 'Noto Sans', sans-serif;
         }
 
         .card {
             background: #ffffff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid #cccccc;
+            border-radius: 6px;
+            /* box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); */
             width: 100%;
             overflow: hidden;
             margin-top: 20px;
         }
 
         .card-header {
-            background-color: #f9f9f9;
-            padding: 8px 16px;
-            border-bottom: 1px solid #ddd;
+            background-color: #eee;
+            padding: 16px 16px;
+            border-bottom: 1px solid #cccccc;
         }
 
         .card-content {
@@ -106,10 +105,10 @@ if (empty($publications)) {
         }
 
         .card-footer {
-            background-color: #f9f9f9;
+            background-color: white;
             padding: 8px 16px;
             color: #555;
-            border-top: 1px solid #ddd;
+            border-top: 1px solid #cccccc;
         }
     </style>
 </head>
@@ -130,15 +129,15 @@ if (empty($publications)) {
                     </p>
                     <p>
                         <?php if (!empty($publication['prism:doi'])): ?>
-                        DOI:
+                            DOI:
                             <a href="https://doi.org/<?php echo htmlspecialchars($publication['prism:doi']); ?>" target="_blank">
                                 <?php echo htmlspecialchars($publication['prism:doi']); ?>
                             </a>
-                        <?php else: ?>
                         <?php endif; ?>
                     </p>
                     <p>EID: <?php echo htmlspecialchars($publication['eid']); ?></p>
 
+                    <!-- ISBN Section -->
                     <?php if (!empty($publication['prism:isbn'])): ?>
                         <p>ISBN:
                             <?php
@@ -152,13 +151,22 @@ if (empty($publications)) {
                                         $values[] = $item;
                                     }
                                 }
-                                echo htmlspecialchars(implode(', ', $values));
+                                // Clean and display as link
+                                $cleaned_values = array_map(function($isbn) {
+                                    return preg_replace('/[^\d]/', '', $isbn); // Remove non-numeric characters
+                                }, $values);
+                                $isbn_links = array_map(function($isbn) {
+                                    return '<a href="https://search.worldcat.org/th/search?q=bn:' . $isbn . '" target="_blank">' . $isbn . '</a>';
+                                }, $cleaned_values);
+                                echo implode(', ', $isbn_links);
                             } else {
-                                echo htmlspecialchars($isbns);
+                                $cleaned_isbn = preg_replace('/[^\d]/', '', $isbns); // Remove non-numeric characters
+                                echo '<a href="https://search.worldcat.org/th/search?q=bn:' . $cleaned_isbn . '" target="_blank">' . $cleaned_isbn . '</a>';
                             }
                             ?>
                         </p>
                     <?php endif; ?>
+
                     <?php if (!empty($publication['prism:issn'])): ?>
                         <p>Part of ISSN: <?php echo htmlspecialchars($publication['prism:issn']); ?></p>
                     <?php endif; ?>
@@ -176,7 +184,7 @@ if (empty($publications)) {
                 </div>
                 <div class="card-footer">
                     <div>
-                        <strong>Source:</strong>
+                        <strong style="color: black;">Source:</strong>
                         <img src="https://orcid.org/assets/vectors/profile-not-verified.svg" alt="ORCID Icon" style="width: 20px; height: 20px; margin-right: 4px; margin-left: 4px; vertical-align: middle;">
                         Komsan Srivisut via Scopus - Elsevier
                     </div>
