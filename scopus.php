@@ -1,7 +1,7 @@
 <?php
-$apiKey = "ae7e84e02386105442a7e6d7919f5d4e";
 $baseUrl = "https://api.elsevier.com/content/search/scopus";
 $baseUrl2 = "https://api.elsevier.com/content/abstract/eid";
+$apiKey = "ae7e84e02386105442a7e6d7919f5d4e";
 $authorId = "23096399800";
 
 function fetchPublications($baseUrl, $apiKey, $authorId)
@@ -135,10 +135,6 @@ foreach ($publications as $publication) {
 
         .card-content a {
             color: #085c77;
-        }
-
-        .card-content a:hover {
-            text-decoration: underline;
         }
 
         .card-footer {
@@ -392,7 +388,6 @@ function sortPublications(sortBy, event) {
     renderCards(sorted);
 }
 
-// Set initial sort and icon
 updateSortIcons('date', sortOrderDate);
 renderCards(publications);
 </script>
