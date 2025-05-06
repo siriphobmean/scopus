@@ -4,8 +4,6 @@ $baseUrl = "https://api.elsevier.com/content/search/scopus";
 $baseUrl2 = "https://api.elsevier.com/content/abstract/eid";
 $authorId = "23096399800";
 
-// example use baseUrl2 : https://api.elsevier.com/content/abstract/eid/2-s2.0-85216806808?apiKey=ae7e84e02386105442a7e6d7919f5d4e
-
 function fetchPublications($baseUrl, $apiKey, $authorId)
 {
     $queryParams = http_build_query([
@@ -24,12 +22,6 @@ function fetchPublications($baseUrl, $apiKey, $authorId)
 
     if ($httpCode === 200) {
         $data = json_decode($response, true);
-
-        // แสดงข้อมูลที่ได้รับจาก API สำหรับการดีบัก
-        // echo "<pre>";
-        // print_r($data);
-        // echo "</pre>";
-
         curl_close($ch);
         return $data["search-results"]["entry"] ?? [];
     } else {
@@ -40,11 +32,34 @@ function fetchPublications($baseUrl, $apiKey, $authorId)
     return [];
 }
 
-$publications = fetchPublications($baseUrl, $apiKey, $authorId);
+function fetchAuthors($baseUrl2, $apiKey, $eid)
+{
+    $url = $baseUrl2 . "/" . $eid . "?apiKey=" . $apiKey;
+    
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Accept: application/json']);
+    
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    
+    if ($httpCode === 200) {
+        $data = json_decode($response, true);
+        curl_close($ch);
+        
+        if (isset($data['abstracts-retrieval-response']['authors']['author'])) {
+            return $data['abstracts-retrieval-response']['authors']['author'];
+        }
+    } else {
+        echo "Error fetching authors: HTTP status code $httpCode\n";
+    }
+    
+    curl_close($ch);
+    return [];
+}
 
-// echo "<pre>";
-// print_r($publications);
-// echo "</pre>";
+$publications = fetchPublications($baseUrl, $apiKey, $authorId);
 
 function getDocumentTypeFull($publication)
 {
@@ -67,6 +82,16 @@ function getDocumentTypeFull($publication)
 
 if (empty($publications)) {
     echo "No publications found or there was an error with the API request.";
+}
+
+$publicationsWithAuthors = [];
+foreach ($publications as $publication) {
+    $eid = $publication['eid'] ?? '';
+    if (!empty($eid)) {
+        $authors = fetchAuthors($baseUrl2, $apiKey, $eid);
+        $publication['detailed_authors'] = $authors;
+    }
+    $publicationsWithAuthors[] = $publication;
 }
 ?>
 
@@ -168,13 +193,13 @@ if (empty($publications)) {
 </head>
 <body>
 
-<?php if (!empty($publications)): ?>
+<?php if (!empty($publicationsWithAuthors)): ?>
     <div style="background-color: #f26522; color: white; padding: 16px; display: flex; justify-content: space-between; align-items: center; border-radius: 6px">
         <!-- <div style="font-size: 20px; font-weight: bold;">
-            Works (<?php echo count($publications); ?>)
+            Works (<?php echo count($publicationsWithAuthors); ?>)
         </div> -->
         <a href="https://orcid.org/0000-0002-2620-930X" target="_blank" style="font-size: 20px; font-weight: bold; color: white; text-decoration: none;">
-            Works (<?php echo count($publications); ?>)
+            Works (<?php echo count($publicationsWithAuthors); ?>)
         </a>
         <div class="hamburger-menu">
             <i id="hamburger-icon" class="fas fa-bars"></i>
@@ -194,7 +219,7 @@ if (empty($publications)) {
 <?php endif; ?>
 
 <script>
-const publications = <?php echo json_encode($publications); ?>;
+const publications = <?php echo json_encode($publicationsWithAuthors); ?>;
 const container = document.getElementById('publication-container');
 
 let sortOrderDate = 'desc';
@@ -223,6 +248,25 @@ function getDocumentTypeFull(pub) {
     return type;
 }
 
+function formatContributors(pub) {
+    if (pub.detailed_authors && pub.detailed_authors.length > 0) {
+        const authorsList = [];
+        
+        pub.detailed_authors.forEach(author => {
+            const surname = author['ce:surname'] || '';
+            const initialName = author['ce:given-name'] ? author['ce:given-name'].charAt(0) + '.' : '';
+            
+            if (surname) {
+                authorsList.push(`${surname}, ${initialName}`);
+            }
+        });
+        
+        return authorsList.join('; ');
+    }
+    
+    return pub['dc:creator'] || 'No contributors found';
+}
+
 function renderCards(data) {
     container.innerHTML = '';
     data.forEach(pub => {
@@ -232,7 +276,7 @@ function renderCards(data) {
         const eid = pub['eid'] || '';
         const title = pub['dc:title'] || '';
         const publicationName = pub['prism:publicationName'] || '';
-        const contributors = pub['dc:creator'] || 'No contributors found';
+        const contributorsHTML = formatContributors(pub);
 
         // === ISBN ===
         let isbnHTML = '';
@@ -276,7 +320,7 @@ function renderCards(data) {
         }
 
         const doiHTML = doi ? `<p>DOI: <a href="https://doi.org/${doi}" target="_blank">${doi}</a></p>` : '';
-        const contributorHTML = `<p style="color: red;">CONTRIBUTORS: ${contributors}</p>`;
+        const contributorHTML = `<p">CONTRIBUTORS: ${contributorsHTML}</p>`;
 
         const html = `
             <div class="card">
