@@ -169,6 +169,11 @@ foreach ($publications as $publication) {
         #hamburger-icon {
             font-size: 24px;
             cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+
+        #hamburger-icon:hover {
+            opacity: 0.5;
         }
 
         .hamburger-menu {
