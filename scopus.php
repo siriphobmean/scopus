@@ -158,10 +158,10 @@ if (empty($publications)) {
         }
 
         #sort-date-arrow,
-#sort-type-arrow {
-    margin-left: 4px;
-    display: none;
-}
+        #sort-type-arrow {
+            margin-left: 4px;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -341,6 +341,13 @@ let activeSort = 'date'; // default sort field
 
 document.getElementById('hamburger-icon').addEventListener('click', function() {
     document.querySelector('.hamburger-menu').classList.toggle('open');
+});
+
+document.addEventListener('click', function(event) {
+    const menu = document.querySelector('.hamburger-menu');
+    if (!menu.contains(event.target)) {
+        menu.classList.remove('open');
+    }
 });
 
 function getDocumentTypeFull(pub) {
