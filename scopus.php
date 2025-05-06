@@ -194,7 +194,7 @@ foreach ($publications as $publication) {
 <body>
 
 <?php if (!empty($publicationsWithAuthors)): ?>
-    <div style="background-color: #f26522; color: white; padding: 16px; display: flex; justify-content: space-between; align-items: center; border-radius: 6px">
+    <div style="background-color: #A67436; color: white; padding: 16px; display: flex; justify-content: space-between; align-items: center; border-radius: 6px">
         <!-- <div style="font-size: 20px; font-weight: bold;">
             Works (<?php echo count($publicationsWithAuthors); ?>)
         </div> -->
