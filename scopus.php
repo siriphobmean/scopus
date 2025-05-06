@@ -3,13 +3,14 @@ $apiKey = "ae7e84e02386105442a7e6d7919f5d4e";
 $baseUrl = "https://api.elsevier.com/content/search/scopus";
 $authorId = "23096399800";
 
-function fetchPublications($baseUrl, $apiKey, $authorId) {
+function fetchPublications($baseUrl, $apiKey, $authorId)
+{
     $queryParams = http_build_query([
-        'query' => "AU-ID($authorId)",
-        'apiKey' => $apiKey
+        "query" => "AU-ID($authorId)",
+        "apiKey" => $apiKey,
     ]);
 
-    $url = $baseUrl . '?' . $queryParams;
+    $url = $baseUrl . "?" . $queryParams;
 
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
@@ -42,16 +43,20 @@ $publications = fetchPublications($baseUrl, $apiKey, $authorId);
 // print_r($publications);
 // echo "</pre>";
 
-function getDocumentTypeFull($publication) {
-    $type = $publication['subtypeDescription'] ?? '';
-    $aggType = $publication['prism:aggregationType'] ?? '';
+function getDocumentTypeFull($publication)
+{
+    $type = $publication["subtypeDescription"] ?? "";
+    $aggType = $publication["prism:aggregationType"] ?? "";
 
-    if ($aggType === 'Journal' && $type === 'Article') {
-        return 'Journal article';
-    } elseif ($aggType === 'Conference Proceeding' && $type === 'Conference Paper') {
-        return 'Conference paper';
-    } elseif ($aggType === 'Book') {
-        return 'Book chapter';
+    if ($aggType === "Journal" && $type === "Article") {
+        return "Journal article";
+    } elseif (
+        $aggType === "Conference Proceeding" &&
+        $type === "Conference Paper"
+    ) {
+        return "Conference paper";
+    } elseif ($aggType === "Book") {
+        return "Book chapter";
     }
 
     return $type;
@@ -125,6 +130,7 @@ if (empty($publications)) {
             padding: 8px;
             top: 30px;
             right: 0px;
+            width: 80px;
         }
 
         #sort-menu a {
@@ -150,18 +156,30 @@ if (empty($publications)) {
         .hamburger-menu.open #sort-menu {
             display: block;
         }
+
+        #sort-date-arrow,
+#sort-type-arrow {
+    margin-left: 4px;
+    display: none;
+}
     </style>
 </head>
 <body>
 <?php if (!empty($publications)): ?>
     <div style="background-color: #f26522; color: white; padding: 16px; display: flex; justify-content: space-between; align-items: center; border-radius: 6px">
-        <div style="font-size: 20px; font-weight: bold;">Works (<?php echo count($publications); ?>)</div>
+        <div style="font-size: 20px; font-weight: bold;">Works (<?php echo count(
+            $publications
+        ); ?>)</div>
         <div class="hamburger-menu">
             <i id="hamburger-icon" class="fas fa-bars"></i>
             <div id="sort-menu">
-                <a href="#" onclick="sortPublications('date')">Date</a>
-                <a href="#" onclick="sortPublications('type')">Type</a>
-            </div>
+    <a href="#" onclick="sortPublications('date', event)">
+        Date <i id="sort-date-arrow" class="fas fa-arrow-down"></i>
+    </a>
+    <a href="#" onclick="sortPublications('type', event)">
+        Type <i id="sort-type-arrow" class="fas fa-arrow-down"></i>
+    </a>
+</div>
         </div>
     </div>
     <div id="publication-container">
@@ -169,42 +187,67 @@ if (empty($publications)) {
             <div class="card">
                 <div class="card-header">
                     <b>
-                        <div><?php echo htmlspecialchars($publication['dc:title']); ?></div>
+                        <div><?php echo htmlspecialchars(
+                            $publication["dc:title"]
+                        ); ?></div>
                     </b>
                 </div>
                 <div class="card-content">
-                    <p><?php echo htmlspecialchars($publication['prism:publicationName']); ?></p>
+                    <p><?php echo htmlspecialchars(
+                        $publication["prism:publicationName"]
+                    ); ?></p>
                     <p>
-                        <?php echo substr($publication['prism:coverDate'], 0, 4); ?> |
-                        <?php echo htmlspecialchars(getDocumentTypeFull($publication)); ?>
+                        <?php echo substr(
+                            $publication["prism:coverDate"],
+                            0,
+                            4
+                        ); ?> |
+                        <?php echo htmlspecialchars(
+                            getDocumentTypeFull($publication)
+                        ); ?>
                     </p>
 
                     <p>
-                        <?php if (!empty($publication['prism:doi'])): ?>
+                        <?php if (!empty($publication["prism:doi"])): ?>
                             DOI:
-                            <a href="https://doi.org/<?php echo htmlspecialchars($publication['prism:doi']); ?>" target="_blank">
-                                <?php echo htmlspecialchars($publication['prism:doi']); ?>
+                            <a href="https://doi.org/<?php echo htmlspecialchars(
+                                $publication["prism:doi"]
+                            ); ?>" target="_blank">
+                                <?php echo htmlspecialchars(
+                                    $publication["prism:doi"]
+                                ); ?>
                             </a>
                         <?php endif; ?>
                     </p>
 
-                    <p>EID: <?php echo htmlspecialchars($publication['eid']); ?></p>
+                    <p>EID: <?php echo htmlspecialchars(
+                        $publication["eid"]
+                    ); ?></p>
 
                     <!-- ISBN Section -->
-                    <?php if (!empty($publication['prism:isbn'])): ?>
+                    <?php if (!empty($publication["prism:isbn"])): ?>
                         <p>Part of ISBN:
                             <?php
-                            $isbns = $publication['prism:isbn'];
+                            $isbns = $publication["prism:isbn"];
                             $values = [];
 
                             if (is_array($isbns)) {
                                 foreach ($isbns as $item) {
                                     if (is_array($item) && isset($item['$'])) {
                                         if (is_array($item['$'])) {
-                                            $values = array_merge($values, $item['$']);
+                                            $values = array_merge(
+                                                $values,
+                                                $item['$']
+                                            );
                                         } else {
-                                            $split = preg_split('/[\s,]+/', $item['$']);
-                                            $values = array_merge($values, $split);
+                                            $split = preg_split(
+                                                "/[\s,]+/",
+                                                $item['$']
+                                            );
+                                            $values = array_merge(
+                                                $values,
+                                                $split
+                                            );
                                         }
                                     } else {
                                         $values[] = $item;
@@ -214,50 +257,63 @@ if (empty($publications)) {
                                 $values[] = $isbns;
                             }
 
-                            $cleaned_values = array_map(function($isbn) {
-                                return preg_replace('/[^\d]/', '', $isbn);
+                            $cleaned_values = array_map(function ($isbn) {
+                                return preg_replace("/[^\d]/", "", $isbn);
                             }, $values);
 
-                            $isbn_links = array_map(function($isbn) {
-                                return '<a href="https://search.worldcat.org/th/search?q=bn:' . $isbn . '" target="_blank">' . $isbn . '</a>';
+                            $isbn_links = array_map(function ($isbn) {
+                                return '<a href="https://search.worldcat.org/th/search?q=bn:' .
+                                    $isbn .
+                                    '" target="_blank">' .
+                                    $isbn .
+                                    "</a>";
                             }, $cleaned_values);
 
-                            echo implode(' ', $isbn_links);
+                            echo implode(" ", $isbn_links);
                             ?>
                         </p>
                     <?php endif; ?>
 
                     <!-- Part of ISSN Section -->
-                    <?php if (!empty($publication['prism:issn']) || !empty($publication['prism:eIssn'])): ?>
+                    <?php if (
+                        !empty($publication["prism:issn"]) ||
+                        !empty($publication["prism:eIssn"])
+                    ): ?>
                         <p>Part of ISSN:
                             <?php
                             $issns = [];
 
-                            if (!empty($publication['prism:eIssn'])) {
-                                $issns[] = $publication['prism:eIssn'];
+                            if (!empty($publication["prism:eIssn"])) {
+                                $issns[] = $publication["prism:eIssn"];
                             }
-                            if (!empty($publication['prism:issn'])) {
-                                $issns[] = $publication['prism:issn'];
+                            if (!empty($publication["prism:issn"])) {
+                                $issns[] = $publication["prism:issn"];
                             }
 
-                            $issn_links = array_map(function($issn) {
-                                $formatted = preg_replace('/(\d{4})(\d{4})/', '$1-$2', $issn);
-                                return '<a href="https://portal.issn.org/resource/ISSN/' . $formatted . '" target="_blank">' . $issn . '</a>';
+                            $issn_links = array_map(function ($issn) {
+                                $formatted = preg_replace(
+                                    "/(\d{4})(\d{4})/",
+                                    '$1-$2',
+                                    $issn
+                                );
+                                return '<a href="https://portal.issn.org/resource/ISSN/' .
+                                    $formatted .
+                                    '" target="_blank">' .
+                                    $issn .
+                                    "</a>";
                             }, $issns);
 
-                            echo implode(' ', $issn_links);
+                            echo implode(" ", $issn_links);
                             ?>
                         </p>
                     <?php endif; ?>
 
                     <p style="color: red;">CONTRIBUTORS:
-                        <?php
-                        if (!empty($publication['dc:creator'])) {
-                            echo htmlspecialchars($publication['dc:creator']);
+                        <?php if (!empty($publication["dc:creator"])) {
+                            echo htmlspecialchars($publication["dc:creator"]);
                         } else {
                             echo "No contributors found";
-                        }
-                        ?>
+                        } ?>
                     </p>
                 </div>
                 <div class="card-footer">
@@ -276,73 +332,167 @@ if (empty($publications)) {
 <?php endif; ?>
 
 <script>
-    const publications = <?php echo json_encode($publications); ?>;
-    const container = document.getElementById('publication-container');
-    
-    // Toggle hamburger menu
-    document.getElementById('hamburger-icon').addEventListener('click', function() {
-        document.querySelector('.hamburger-menu').classList.toggle('open');
+const publications = <?php echo json_encode($publications); ?>;
+const container = document.getElementById('publication-container');
+
+let sortOrderDate = 'desc';
+let sortOrderType = 'desc';
+let activeSort = 'date'; // default sort field
+
+document.getElementById('hamburger-icon').addEventListener('click', function() {
+    document.querySelector('.hamburger-menu').classList.toggle('open');
+});
+
+function getDocumentTypeFull(pub) {
+    const type = pub['subtypeDescription'] || '';
+    const aggType = pub['prism:aggregationType'] || '';
+    if (aggType === 'Conference Proceeding' && type === 'Conference Paper') {
+        return 'Conference paper';
+    }
+    if (aggType === 'Journal' && type === 'Article') return 'Journal article';
+    if (aggType === 'Book') return 'Book chapter';
+    return type;
+}
+
+function renderCards(data) {
+    container.innerHTML = '';
+    data.forEach(pub => {
+        const type = getDocumentTypeFull(pub);
+        const year = pub['prism:coverDate'] ? pub['prism:coverDate'].substring(0, 4) : 'N/A';
+        const doi = pub['prism:doi'] || '';
+        const eid = pub['eid'] || '';
+        const title = pub['dc:title'] || '';
+        const publicationName = pub['prism:publicationName'] || '';
+        const contributors = pub['dc:creator'] || 'No contributors found';
+
+        // === ISBN ===
+        let isbnHTML = '';
+        if (pub['prism:isbn']) {
+            let isbns = pub['prism:isbn'];
+            let values = [];
+
+            if (Array.isArray(isbns)) {
+                isbns.forEach(item => {
+                    if (typeof item === 'object' && item['$']) {
+                        if (Array.isArray(item['$'])) {
+                            values.push(...item['$']);
+                        } else {
+                            values.push(...item['$'].split(/[\s,]+/));
+                        }
+                    } else {
+                        values.push(item);
+                    }
+                });
+            } else {
+                values.push(isbns);
+            }
+
+            const cleaned = values.map(isbn => isbn.replace(/[^\dXx]/g, ''));
+            const links = cleaned.map(isbn => `<a href="https://search.worldcat.org/th/search?q=bn:${isbn}" target="_blank">${isbn}</a>`);
+            isbnHTML = `<p>Part of ISBN: ${links.join(' ')}</p>`;
+        }
+
+        // === ISSN ===
+        let issnHTML = '';
+        const issns = [];
+        if (pub['prism:issn']) issns.push(pub['prism:issn']);
+        if (pub['prism:eIssn']) issns.push(pub['prism:eIssn']);
+
+        if (issns.length > 0) {
+            const links = issns.map(issn => {
+                const formatted = issn.replace(/(\d{4})(\d{4})/, '$1-$2');
+                return `<a href="https://portal.issn.org/resource/ISSN/${formatted}" target="_blank">${issn}</a>`;
+            });
+            issnHTML = `<p>Part of ISSN: ${links.join(' ')}</p>`;
+        }
+
+        const doiHTML = doi ? `<p>DOI: <a href="https://doi.org/${doi}" target="_blank">${doi}</a></p>` : '';
+        const contributorHTML = `<p style="color: red;">CONTRIBUTORS: ${contributors}</p>`;
+
+        const html = `
+            <div class="card">
+                <div class="card-header"><b><div>${title}</div></b></div>
+                <div class="card-content">
+                    <p>${publicationName}</p>
+                    <p>${year} | ${type}</p>
+                    ${doiHTML}
+                    <p>EID: ${eid}</p>
+                    ${isbnHTML}
+                    ${issnHTML}
+                    ${contributorHTML}
+                </div>
+                <div class="card-footer">
+                    <strong style="color: black;">Source:</strong>
+                    <img src="https://orcid.org/assets/vectors/profile-not-verified.svg"
+                         alt="ORCID Icon" style="width: 20px; height: 20px; margin: 0 4px; vertical-align: middle;">
+                    Komsan Srivisut via Scopus - Elsevier
+                </div>
+            </div>`;
+        container.innerHTML += html;
     });
+}
 
-    function getDocumentTypeFull(pub) {
-        const type = pub['subtypeDescription'] || '';
-        const aggType = pub['prism:aggregationType'] || '';
-        if (aggType === 'Journal' && type === 'Article') return 'Journal article';
-        if (aggType === 'Conference Proceeding' && type === 'Conference Paper') return 'Conference paper';
-        if (aggType === 'Book') return 'Book chapter';
-        return type;
+function updateSortIcons(active, order) {
+    const dateIcon = document.getElementById('sort-date-arrow');
+    const typeIcon = document.getElementById('sort-type-arrow');
+
+    // Reset all arrows
+    dateIcon.style.display = 'none';
+    typeIcon.style.display = 'none';
+
+    if (active === 'date') {
+        dateIcon.style.display = 'inline';
+        dateIcon.classList.remove('fa-arrow-up', 'fa-arrow-down');
+        dateIcon.classList.add(order === 'asc' ? 'fa-arrow-up' : 'fa-arrow-down');
+    } else if (active === 'type') {
+        typeIcon.style.display = 'inline';
+        typeIcon.classList.remove('fa-arrow-up', 'fa-arrow-down');
+        typeIcon.classList.add(order === 'asc' ? 'fa-arrow-up' : 'fa-arrow-down');
     }
+}
 
-    function renderCards(data) {
-        container.innerHTML = '';
-        data.forEach(pub => {
-            const type = getDocumentTypeFull(pub);
-            const year = pub['prism:coverDate'] ? pub['prism:coverDate'].substring(0, 4) : 'N/A';
-            const doi = pub['prism:doi'] || '';
-            const eid = pub['eid'] || '';
-            const title = pub['dc:title'] || '';
-            const publicationName = pub['prism:publicationName'] || '';
-            const contributors = pub['dc:creator'] || 'No contributors found';
+function sortPublications(sortBy, event) {
+    event.preventDefault();
+    event.stopPropagation();
+    document.querySelector('.hamburger-menu').classList.remove('open');
+    let sorted = [...publications];
 
-            const doiHTML = doi ? `<p>DOI: <a href="https://doi.org/${doi}" target="_blank">${doi}</a></p>` : '';
-            const contributorHTML = `<p style="color: red;">CONTRIBUTORS: ${contributors}</p>`;
-
-            const html = `
-                <div class="card">
-                    <div class="card-header"><b><div>${title}</div></b></div>
-                    <div class="card-content">
-                        <p>${publicationName}</p>
-                        <p>${year} | ${type}</p>
-                        ${doiHTML}
-                        <p>EID: ${eid}</p>
-                        ${contributorHTML}
-                    </div>
-                    <div class="card-footer">
-                        <strong style="color: black;">Source:</strong>
-                        <img src="https://orcid.org/assets/vectors/profile-not-verified.svg"
-                             alt="ORCID Icon" style="width: 20px; height: 20px; margin: 0 4px; vertical-align: middle;">
-                        Komsan Srivisut via Scopus - Elsevier
-                    </div>
-                </div>`;
-            container.innerHTML += html;
-        });
-    }
-
-    function sortPublications(sortBy) {
-        const sorted = [...publications];
-
-        if (sortBy === 'date') {
+    if (sortBy === 'date') {
+        if (sortOrderDate === 'desc') {
+            sorted.sort((a, b) => new Date(a['prism:coverDate']) - new Date(b['prism:coverDate']));
+            sortOrderDate = 'asc';
+        } else {
             sorted.sort((a, b) => new Date(b['prism:coverDate']) - new Date(a['prism:coverDate']));
-        } else if (sortBy === 'type') {
+            sortOrderDate = 'desc';
+        }
+        activeSort = 'date';
+        updateSortIcons('date', sortOrderDate);
+    } else if (sortBy === 'type') {
+        if (sortOrderType === 'desc') {
             sorted.sort((a, b) => {
                 const typeA = getDocumentTypeFull(a).toLowerCase();
                 const typeB = getDocumentTypeFull(b).toLowerCase();
                 return typeA.localeCompare(typeB);
             });
+            sortOrderType = 'asc';
+        } else {
+            sorted.sort((a, b) => {
+                const typeA = getDocumentTypeFull(a).toLowerCase();
+                const typeB = getDocumentTypeFull(b).toLowerCase();
+                return typeB.localeCompare(typeA);
+            });
+            sortOrderType = 'desc';
         }
-
-        renderCards(sorted);
+        activeSort = 'type';
+        updateSortIcons('type', sortOrderType);
     }
+
+    renderCards(sorted);
+}
+
+// Set initial sort and icon
+updateSortIcons('date', sortOrderDate);
+renderCards(publications);
 </script>
 
 </body>
