@@ -140,7 +140,6 @@ foreach ($publications as $publication) {
         .card-footer {
             background-color: white;
             padding: 8px 16px;
-            color: #555;
             border-top: 1px solid #cccccc;
         }
 
