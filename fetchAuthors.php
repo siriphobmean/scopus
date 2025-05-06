@@ -182,53 +182,20 @@ function getDocumentTypeFull(pub) {
     return type;
 }
 
-// function formatContributors(pub) {
-//     if (pub.detailed_authors && pub.detailed_authors.length > 0) {
-//         let html = '<div class="contributors">';
-        
-//         pub.detailed_authors.forEach((author, index) => {
-//             const givenName = author['ce:given-name'] || '';
-//             const surname = author['ce:surname'] || '';
-//             const fullName = `${givenName} ${surname}`.trim();
-//             const auid = author['@auid'] || author['auid'] || '';
-            
-//             html += `<div class="contributor">${index + 1}. `;
-            
-//             if (auid) {
-//                 html += `<a href="https://www.scopus.com/authid/detail.uri?authorId=${auid}" target="_blank">${fullName}</a>`;
-//             } else {
-//                 html += fullName;
-//             }
-            
-//             html += '</div>';
-//         });
-        
-//         html += '</div>';
-//         return html;
-//     }
-    
-//     // Fallback to original creator if detailed authors not available
-//     return pub['dc:creator'] || 'No contributors found';
-// }
 function formatContributors(pub) {
     if (pub.detailed_authors && pub.detailed_authors.length > 0) {
         const authorsList = [];
-        
+
         pub.detailed_authors.forEach(author => {
-            const surname = author['ce:surname'] || '';
-            // ดึงตัวอักษรแรกของชื่อ (initial)
-            const initialName = author['ce:given-name'] ? author['ce:given-name'].charAt(0) + '.' : '';
-            
-            if (surname) {
-                authorsList.push(`${surname}, ${initialName}`);
+            const indexedName = author['ce:indexed-name'];
+            if (indexedName) {
+                authorsList.push(indexedName);
             }
         });
-        
-        // เชื่อมด้วย semicolon (;)
+
         return authorsList.join('; ');
     }
-    
-    // Fallback to original creator if detailed authors not available
+
     return pub['dc:creator'] || 'No contributors found';
 }
 
