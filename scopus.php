@@ -1,7 +1,10 @@
 <?php
 $apiKey = "ae7e84e02386105442a7e6d7919f5d4e";
 $baseUrl = "https://api.elsevier.com/content/search/scopus";
+$baseUrl2 = "https://api.elsevier.com/content/abstract/eid";
 $authorId = "23096399800";
+
+// example use baseUrl2 : https://api.elsevier.com/content/abstract/eid/2-s2.0-85216806808?apiKey=ae7e84e02386105442a7e6d7919f5d4e
 
 function fetchPublications($baseUrl, $apiKey, $authorId)
 {
