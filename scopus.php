@@ -226,7 +226,7 @@ foreach ($publications as $publication) {
             Works (<?php echo count($publicationsWithAuthors); ?>)
         </div>
         <div class="hamburger-menu">
-            <i id="hamburger-icon" class="fas fa-bars"></i>
+           <div id="hamburger-icon" style="display: flex; justify-content: center; align-items: center; gap: 10px;"><i class="fas fa-bars"></i><span style="font-size: 16px">Sort</span></div>
             <div id="sort-menu">
                 <a href="#" onclick="sortPublications('title', event)">
                     <span>Title</span> <i id="sort-title-arrow" class="fas fa-arrow-down"></i>
@@ -365,7 +365,7 @@ function renderCards(data) {
                     ${contributorHTML}
                 </div>
                 <div class="card-footer">
-                    <strong style="color: black;">Source:</strong>
+                    <strong style="color: #f26522;">Source:</strong>
                     Elsevier’s Scopus
                 </div>
             </div>`;
