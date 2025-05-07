@@ -152,7 +152,7 @@ foreach ($publications as $publication) {
             padding: 8px;
             top: 30px;
             right: 0px;
-            min-width: 100px;
+            min-width: 110px;
         }
 
         #sort-menu a {
