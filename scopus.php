@@ -276,24 +276,6 @@ function getDocumentTypeFull(pub) {
     return type;
 }
 
-// function formatContributors(pub) {
-//     if (pub.detailed_authors && pub.detailed_authors.length > 0) {
-//         const authorsList = [];
-
-//         pub.detailed_authors.forEach(author => {
-//             const indexedName = author['ce:indexed-name'];
-//             const auid = author['@auid'] || author['auid'] || '';
-//             if (indexedName) {
-//                 authorsList.push(indexedName);
-//             }
-//         });
-
-//         return authorsList.join('; ');
-//     }
-
-//     return pub['dc:creator'] || 'No contributors found';
-// }
-
 function formatContributors(pub) {
     if (pub.detailed_authors && pub.detailed_authors.length > 0) {
         const authorsList = pub.detailed_authors.map(author => {
@@ -433,10 +415,10 @@ function sortPublications(sortBy, event) {
         updateSortIcons('date', sortOrderDate);
     } else if (sortBy === 'title') {
         if (sortOrderTitle === 'desc') {
-            sorted.sort((a, b) => a.title.localeCompare(b.title));
+            sorted.sort((a, b) => a['dc:title'].localeCompare(b['dc:title']));
             sortOrderTitle = 'asc';
         } else {
-            sorted.sort((a, b) => b.title.localeCompare(a.title));
+            sorted.sort((a, b) => b['dc:title'].localeCompare(a['dc:title']));
             sortOrderTitle = 'desc';
         }
         activeSort = 'title';
