@@ -194,11 +194,15 @@ foreach ($publications as $publication) {
         }
 
         .hover-link {
-            color: black;
+            color: #085c77;
             text-decoration: none;
             position: relative;
             cursor: pointer;
-        }  
+        }
+
+        .hover-link:hover {
+            color: #085c77 !important;
+        }
 
         .hover-link::after {
             content: '';
