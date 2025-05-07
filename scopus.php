@@ -143,7 +143,7 @@ foreach ($publications as $publication) {
             border-top: 1px solid #cccccc;
         }
 
-        #sort-menu {
+        .dropdown-menu {
             display: none;
             position: absolute;
             background-color: white;
@@ -153,9 +153,43 @@ foreach ($publications as $publication) {
             top: 30px;
             right: 0px;
             min-width: 110px;
+            /* z-index: 10; */
         }
 
-        #sort-menu a {
+        .icon-btn {
+            font-size: 24px;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .icon-btn:hover {
+            opacity: 0.5;
+        }
+
+        .menu-container {
+            position: relative;
+        }
+
+        .menu-container.open .dropdown-menu {
+            display: block;
+        }
+
+        .sort-arrow {
+            /* margin-left: 4px; */
+            display: none;
+        }
+
+        /* .filter-option {
+            cursor: pointer;
+            padding: 4px 0;
+            color: black;
+        } */
+
+        .filter-option {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -165,31 +199,39 @@ foreach ($publications as $publication) {
             gap: 10px;
         }
 
-        #sort-menu a:hover {
+        .filter-option:hover {
+            background-color: #f2f2f2;
+            cursor: pointer;
+        }
+
+        .filter-option.active {
+            color: #f26522;
+            font-weight: bold;
+        }
+
+        .controls-container {
+            display: flex;
+            gap: 20px;
+        }
+
+        .dropdown-menu a {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 12px;
+            text-decoration: none;
+            color: #000;
+            gap: 10px;
+        }
+
+        .dropdown-menu a:hover {
+            /* color: #f26522; */
             background-color: #f2f2f2;
         }
 
-        #hamburger-icon {
-            font-size: 24px;
-            cursor: pointer;
-            transition: opacity 0.3s ease;
-        }
-
-        #hamburger-icon:hover {
-            opacity: 0.5;
-        }
-
-        .hamburger-menu {
-            position: relative;
-        }
-
-        .hamburger-menu.open #sort-menu {
-            display: block;
-        }
-
+        #sort-title-arrow,
         #sort-date-arrow,
         #sort-type-arrow {
-            margin-left: 4px;
             display: none;
         }
 
@@ -227,20 +269,33 @@ foreach ($publications as $publication) {
 <?php if (!empty($publicationsWithAuthors)): ?>
     <div style="background-color: #f26522; color: white; padding: 16px; display: flex; justify-content: space-between; align-items: center; border-radius: 6px">
         <div style="font-size: 20px; font-weight: bold;">
-            Works (<?php echo count($publicationsWithAuthors); ?>)
+            <span id="pub-count">Works (<?php echo count($publicationsWithAuthors); ?>)</span>
         </div>
-        <div class="hamburger-menu">
-           <div id="hamburger-icon" style="display: flex; justify-content: center; align-items: center; gap: 10px;"><i class="fas fa-bars"></i><span style="font-size: 16px">Sort</span></div>
-            <div id="sort-menu">
-                <a href="#" onclick="sortPublications('title', event)">
-                    <span>Title</span> <i id="sort-title-arrow" class="fas fa-arrow-down"></i>
-                </a>
-                <a href="#" onclick="sortPublications('date', event)">
-                    <span>Date</span> <i id="sort-date-arrow" class="fas fa-arrow-down"></i>
-                </a>
-                <a href="#" onclick="sortPublications('type', event)">
-                    <span>Type</span> <i id="sort-type-arrow" class="fas fa-arrow-down"></i>
-                </a>
+        <div class="controls-container">
+            <!-- Filter Menu -->
+            <div class="menu-container filter-menu">
+                <div class="icon-btn" id="filter-icon"><i class="fas fa-filter"></i><span style="font-size: 16px">Filter</span></div>
+                <div class="dropdown-menu" id="filter-menu">
+                    <div class="filter-option active" data-type="all">All</div>
+                    <div class="filter-option" data-type="Conference paper">Conference paper</div>
+                    <div class="filter-option" data-type="Journal article">Journal article</div>
+                    <div class="filter-option" data-type="Book chapter">Book chapter</div>
+                </div>
+            </div>
+            <!-- Sort Menu -->
+            <div class="menu-container sort-menu">
+                <div class="icon-btn" id="sort-icon"><i class="fas fa-bars"></i><span style="font-size: 16px">Sort</span></div>
+                <div class="dropdown-menu" id="sort-menu">
+                    <a href="#" onclick="sortPublications('title', event)">
+                        <span>Title</span> <i id="sort-title-arrow" class="fas fa-arrow-down sort-arrow"></i>
+                    </a>
+                    <a href="#" onclick="sortPublications('date', event)">
+                        <span>Date</span> <i id="sort-date-arrow" class="fas fa-arrow-down sort-arrow"></i>
+                    </a>
+                    <a href="#" onclick="sortPublications('type', event)">
+                        <span>Type</span> <i id="sort-type-arrow" class="fas fa-arrow-down sort-arrow"></i>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -257,16 +312,40 @@ let sortOrderTitle = 'desc';
 let sortOrderDate = 'desc';
 let sortOrderType = 'desc';
 let activeSort = 'date';
+let activeFilter = 'all';
 
-document.getElementById('hamburger-icon').addEventListener('click', function () {
-    document.querySelector('.hamburger-menu').classList.toggle('open');
+document.getElementById('sort-icon').addEventListener('click', function() {
+    document.querySelector('.sort-menu').classList.toggle('open');
+    document.querySelector('.filter-menu').classList.remove('open');
 });
 
-document.addEventListener('click', function (event) {
-    const menu = document.querySelector('.hamburger-menu');
-    if (!menu.contains(event.target)) {
-        menu.classList.remove('open');
+document.getElementById('filter-icon').addEventListener('click', function() {
+    document.querySelector('.filter-menu').classList.toggle('open');
+    document.querySelector('.sort-menu').classList.remove('open');
+});
+
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.menu-container')) {
+        document.querySelectorAll('.menu-container').forEach(menu => {
+            menu.classList.remove('open');
+        });
     }
+});
+
+document.querySelectorAll('.filter-option').forEach(option => {
+    option.addEventListener('click', function() {
+        const filterType = this.getAttribute('data-type');
+        activeFilter = filterType;
+        
+        document.querySelectorAll('.filter-option').forEach(opt => {
+            opt.classList.remove('active');
+        });
+        this.classList.add('active');
+        
+        document.querySelector('.filter-menu').classList.remove('open');
+        
+        applyFiltersAndSort();
+    });
 });
 
 function getDocumentTypeFull(pub) {
@@ -301,8 +380,48 @@ function formatContributors(pub) {
     return pub['dc:creator'] || 'No contributors found';
 }
 
+function applyFiltersAndSort() {
+    let filtered = [...publications];
+    
+    if (activeFilter !== 'all') {
+        filtered = filtered.filter(pub => {
+            const pubType = getDocumentTypeFull(pub);
+            return pubType === activeFilter;
+        });
+    }
+    
+    if (activeSort === 'date') {
+        if (sortOrderDate === 'asc') {
+            filtered.sort((a, b) => new Date(a['prism:coverDate']) - new Date(b['prism:coverDate']));
+        } else {
+            filtered.sort((a, b) => new Date(b['prism:coverDate']) - new Date(a['prism:coverDate']));
+        }
+    } else if (activeSort === 'title') {
+        if (sortOrderTitle === 'asc') {
+            filtered.sort((a, b) => a['dc:title'].localeCompare(b['dc:title']));
+        } else {
+            filtered.sort((a, b) => b['dc:title'].localeCompare(a['dc:title']));
+        }
+    } else if (activeSort === 'type') {
+        if (sortOrderType === 'asc') {
+            filtered.sort((a, b) => getDocumentTypeFull(a).localeCompare(getDocumentTypeFull(b)));
+        } else {
+            filtered.sort((a, b) => getDocumentTypeFull(b).localeCompare(getDocumentTypeFull(a)));
+        }
+    }
+    
+    document.getElementById('pub-count').textContent = `Works (${filtered.length})`;
+    
+    renderCards(filtered);
+}
+
 function renderCards(data) {
     container.innerHTML = '';
+    if (data.length === 0) {
+        container.innerHTML = '<div style="margin-top: 20px; text-align: center;">No publications found matching the selected filter.</div>';
+        return;
+    }
+    
     data.forEach(pub => {
         const type = getDocumentTypeFull(pub);
         const year = pub['prism:coverDate'] ? pub['prism:coverDate'].substring(0, 4) : 'N/A';
@@ -354,7 +473,7 @@ function renderCards(data) {
         }
 
         const doiHTML = doi ? `<p>DOI: <a href="https://doi.org/${doi}" class="hover-link" target="_blank">${doi}</a></p>` : '';
-        const contributorHTML = `<p">CONTRIBUTORS: ${contributorsHTML}</p>`;
+        const contributorHTML = `<p>CONTRIBUTORS: ${contributorsHTML}</p>`;
 
         const html = `
             <div class="card">
@@ -370,7 +489,7 @@ function renderCards(data) {
                 </div>
                 <div class="card-footer">
                     <strong style="color: #f26522;">Source:</strong>
-                    Elsevier’s Scopus
+                    Elsevier's Scopus
                 </div>
             </div>`;
         container.innerHTML += html;
@@ -404,46 +523,27 @@ function updateSortIcons(active, order) {
 function sortPublications(sortBy, event) {
     event.preventDefault();
     event.stopPropagation();
-    document.querySelector('.hamburger-menu').classList.remove('open');
-    let sorted = [...publications];
-
+    document.querySelector('.sort-menu').classList.remove('open');
+    
     if (sortBy === 'date') {
-        if (sortOrderDate === 'desc') {
-            sorted.sort((a, b) => new Date(a['prism:coverDate']) - new Date(b['prism:coverDate']));
-            sortOrderDate = 'asc';
-        } else {
-            sorted.sort((a, b) => new Date(b['prism:coverDate']) - new Date(a['prism:coverDate']));
-            sortOrderDate = 'desc';
-        }
+        sortOrderDate = sortOrderDate === 'desc' ? 'asc' : 'desc';
         activeSort = 'date';
         updateSortIcons('date', sortOrderDate);
     } else if (sortBy === 'title') {
-        if (sortOrderTitle === 'desc') {
-            sorted.sort((a, b) => a['dc:title'].localeCompare(b['dc:title']));
-            sortOrderTitle = 'asc';
-        } else {
-            sorted.sort((a, b) => b['dc:title'].localeCompare(a['dc:title']));
-            sortOrderTitle = 'desc';
-        }
+        sortOrderTitle = sortOrderTitle === 'desc' ? 'asc' : 'desc';
         activeSort = 'title';
         updateSortIcons('title', sortOrderTitle);
     } else if (sortBy === 'type') {
-        if (sortOrderType === 'desc') {
-            sorted.sort((a, b) => getDocumentTypeFull(a).localeCompare(getDocumentTypeFull(b)));
-            sortOrderType = 'asc';
-        } else {
-            sorted.sort((a, b) => getDocumentTypeFull(b).localeCompare(getDocumentTypeFull(a)));
-            sortOrderType = 'desc';
-        }
+        sortOrderType = sortOrderType === 'desc' ? 'asc' : 'desc';
         activeSort = 'type';
         updateSortIcons('type', sortOrderType);
     }
 
-    renderCards(sorted);
+    applyFiltersAndSort();
 }
 
 updateSortIcons('date', sortOrderDate);
-renderCards(publications);
+applyFiltersAndSort();
 </script>
 
 </body>
