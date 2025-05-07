@@ -152,14 +152,17 @@ foreach ($publications as $publication) {
             padding: 8px;
             top: 30px;
             right: 0px;
-            width: 80px;
+            min-width: 100px;
         }
 
         #sort-menu a {
-            display: block;
-            padding: 8px;
-            color: black;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 12px;
             text-decoration: none;
+            color: #000;
+            gap: 10px;
         }
 
         #sort-menu a:hover {
@@ -189,26 +192,50 @@ foreach ($publications as $publication) {
             margin-left: 4px;
             display: none;
         }
+
+        .hover-link {
+            color: black;
+            text-decoration: none;
+            position: relative;
+            cursor: pointer;
+        }  
+
+        .hover-link::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            bottom: -2px;
+            left: 0;
+            background-color: #f26522;
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.4s ease-out;
+        }
+
+        .hover-link:hover::after {
+            transform: scaleX(1);
+        }
     </style>
 </head>
 <body>
 
 <?php if (!empty($publicationsWithAuthors)): ?>
-    <div style="background-color: #A67436; color: white; padding: 16px; display: flex; justify-content: space-between; align-items: center; border-radius: 6px">
-        <!-- <div style="font-size: 20px; font-weight: bold;">
+    <div style="background-color: #f26522; color: white; padding: 16px; display: flex; justify-content: space-between; align-items: center; border-radius: 6px">
+        <div style="font-size: 20px; font-weight: bold;">
             Works (<?php echo count($publicationsWithAuthors); ?>)
-        </div> -->
-        <a href="https://orcid.org/0000-0002-2620-930X" target="_blank" style="font-size: 20px; font-weight: bold; color: white; text-decoration: none;">
-            Works (<?php echo count($publicationsWithAuthors); ?>)
-        </a>
+        </div>
         <div class="hamburger-menu">
             <i id="hamburger-icon" class="fas fa-bars"></i>
             <div id="sort-menu">
+                <a href="#" onclick="sortPublications('title', event)">
+                    <span>Title</span> <i id="sort-title-arrow" class="fas fa-arrow-down"></i>
+                </a>
                 <a href="#" onclick="sortPublications('date', event)">
-                    Date <i id="sort-date-arrow" class="fas fa-arrow-down"></i>
+                    <span>Date</span> <i id="sort-date-arrow" class="fas fa-arrow-down"></i>
                 </a>
                 <a href="#" onclick="sortPublications('type', event)">
-                    Type <i id="sort-type-arrow" class="fas fa-arrow-down"></i>
+                    <span>Type</span> <i id="sort-type-arrow" class="fas fa-arrow-down"></i>
                 </a>
             </div>
         </div>
@@ -222,6 +249,7 @@ foreach ($publications as $publication) {
 const publications = <?php echo json_encode($publicationsWithAuthors); ?>;
 const container = document.getElementById('publication-container');
 
+let sortOrderTitle = 'desc';
 let sortOrderDate = 'desc';
 let sortOrderType = 'desc';
 let activeSort = 'date';
@@ -248,14 +276,36 @@ function getDocumentTypeFull(pub) {
     return type;
 }
 
+// function formatContributors(pub) {
+//     if (pub.detailed_authors && pub.detailed_authors.length > 0) {
+//         const authorsList = [];
+
+//         pub.detailed_authors.forEach(author => {
+//             const indexedName = author['ce:indexed-name'];
+//             const auid = author['@auid'] || author['auid'] || '';
+//             if (indexedName) {
+//                 authorsList.push(indexedName);
+//             }
+//         });
+
+//         return authorsList.join('; ');
+//     }
+
+//     return pub['dc:creator'] || 'No contributors found';
+// }
+
 function formatContributors(pub) {
     if (pub.detailed_authors && pub.detailed_authors.length > 0) {
-        const authorsList = [];
-
-        pub.detailed_authors.forEach(author => {
+        const authorsList = pub.detailed_authors.map(author => {
             const indexedName = author['ce:indexed-name'];
-            if (indexedName) {
-                authorsList.push(indexedName);
+            const auid = author['@auid'] || author['auid'] || '';
+
+            if (indexedName && auid) {
+                return `<a href="https://www.scopus.com/authid/detail.uri?authorId=${auid}" class="hover-link" target="_blank">${indexedName}</a>`;
+            } else if (indexedName) {
+                return indexedName;
+            } else {
+                return 'Unknown Author';
             }
         });
 
@@ -299,7 +349,7 @@ function renderCards(data) {
             }
 
             const cleaned = values.map(isbn => isbn.replace(/[^\dXx]/g, ''));
-            const links = cleaned.map(isbn => `<a href="https://search.worldcat.org/th/search?q=bn:${isbn}" target="_blank">${isbn}</a>`);
+            const links = cleaned.map(isbn => `<a href="https://search.worldcat.org/th/search?q=bn:${isbn}" class="hover-link" target="_blank">${isbn}</a>`);
             isbnHTML = `<p>Part of ISBN: ${links.join(' ')}</p>`;
         }
 
@@ -312,12 +362,12 @@ function renderCards(data) {
         if (issns.length > 0) {
             const links = issns.map(issn => {
                 const formatted = issn.replace(/(\d{4})(\d{4})/, '$1-$2');
-                return `<a href="https://portal.issn.org/resource/ISSN/${formatted}" target="_blank">${issn}</a>`;
+                return `<a href="https://portal.issn.org/resource/ISSN/${formatted}" class="hover-link" target="_blank">${issn}</a>`;
             });
             issnHTML = `<p>Part of ISSN: ${links.join(' ')}</p>`;
         }
 
-        const doiHTML = doi ? `<p>DOI: <a href="https://doi.org/${doi}" target="_blank">${doi}</a></p>` : '';
+        const doiHTML = doi ? `<p>DOI: <a href="https://doi.org/${doi}" class="hover-link" target="_blank">${doi}</a></p>` : '';
         const contributorHTML = `<p">CONTRIBUTORS: ${contributorsHTML}</p>`;
 
         const html = `
@@ -334,9 +384,7 @@ function renderCards(data) {
                 </div>
                 <div class="card-footer">
                     <strong style="color: black;">Source:</strong>
-                    <img src="https://orcid.org/assets/vectors/profile-not-verified.svg"
-                         alt="ORCID Icon" style="width: 20px; height: 20px; margin: 0 4px; vertical-align: middle;">
-                    Komsan Srivisut via Scopus - Elsevier
+                    Elsevier’s Scopus
                 </div>
             </div>`;
         container.innerHTML += html;
@@ -344,9 +392,11 @@ function renderCards(data) {
 }
 
 function updateSortIcons(active, order) {
+    const titleIcon = document.getElementById('sort-title-arrow');
     const dateIcon = document.getElementById('sort-date-arrow');
     const typeIcon = document.getElementById('sort-type-arrow');
 
+    titleIcon.style.display = 'none';
     dateIcon.style.display = 'none';
     typeIcon.style.display = 'none';
 
@@ -354,6 +404,10 @@ function updateSortIcons(active, order) {
         dateIcon.style.display = 'inline';
         dateIcon.classList.remove('fa-arrow-up', 'fa-arrow-down');
         dateIcon.classList.add(order === 'asc' ? 'fa-arrow-up' : 'fa-arrow-down');
+    } else if (active === 'title') {
+        titleIcon.style.display = 'inline';
+        titleIcon.classList.remove('fa-arrow-up', 'fa-arrow-down');
+        titleIcon.classList.add(order === 'asc' ? 'fa-arrow-up' : 'fa-arrow-down');
     } else if (active === 'type') {
         typeIcon.style.display = 'inline';
         typeIcon.classList.remove('fa-arrow-up', 'fa-arrow-down');
@@ -377,6 +431,16 @@ function sortPublications(sortBy, event) {
         }
         activeSort = 'date';
         updateSortIcons('date', sortOrderDate);
+    } else if (sortBy === 'title') {
+        if (sortOrderTitle === 'desc') {
+            sorted.sort((a, b) => a.title.localeCompare(b.title));
+            sortOrderTitle = 'asc';
+        } else {
+            sorted.sort((a, b) => b.title.localeCompare(a.title));
+            sortOrderTitle = 'desc';
+        }
+        activeSort = 'title';
+        updateSortIcons('title', sortOrderTitle);
     } else if (sortBy === 'type') {
         if (sortOrderType === 'desc') {
             sorted.sort((a, b) => getDocumentTypeFull(a).localeCompare(getDocumentTypeFull(b)));
