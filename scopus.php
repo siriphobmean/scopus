@@ -2,7 +2,7 @@
 $baseUrl = "https://api.elsevier.com/content/search/scopus";
 $baseUrl2 = "https://api.elsevier.com/content/abstract/eid";
 $apiKey = "ae7e84e02386105442a7e6d7919f5d4e";
-$authorId = "57184355700";
+$authorId = "23096399800";
 
 function fetchPublications($baseUrl, $apiKey, $authorId)
 {
@@ -200,6 +200,12 @@ foreach ($publications as $publication) {
             display: none;
         }
 
+        /* .filter-option {
+            cursor: pointer;
+            padding: 4px 0;
+            color: black;
+        } */
+
         .filter-option {
             display: flex;
             justify-content: space-between;
@@ -376,6 +382,16 @@ document.querySelectorAll('.filter-option').forEach(option => {
     });
 });
 
+// function getDocumentTypeFull(pub) {
+//     const type = pub['subtypeDescription'] || '';
+//     const aggType = pub['prism:aggregationType'] || '';
+//     if (aggType === 'Conference Proceeding' && type === 'Conference Paper') {
+//         return 'Conference paper';
+//     }
+//     if (aggType === 'Journal' && type === 'Article') return 'Journal article';
+//     if (aggType === 'Book') return 'Book chapter';
+//     return type;
+// }
 function getDocumentTypeFull(pub) {
     const type = pub['subtypeDescription'] || '';
     const aggType = pub['prism:aggregationType'] || '';
