@@ -250,7 +250,7 @@ foreach ($publications as $publication) {
             content: '';
             position: absolute;
             width: 100%;
-            height: 2px;
+            min-height: 2px;
             bottom: -2px;
             left: 0;
             background-color: #f26522;
@@ -261,6 +261,7 @@ foreach ($publications as $publication) {
 
         .hover-link:hover::after {
             transform: scaleX(1);
+            min-height: 2px;
         }
     </style>
 </head>
@@ -357,7 +358,7 @@ function getDocumentTypeFull(pub) {
     if (aggType === 'Journal' && type === 'Article') return 'Journal article';
     if (aggType === 'Book') return 'Book chapter';
     return type;
-}
+} // Conference Proceeding is key to debug
 
 function formatContributors(pub) {
     if (pub.detailed_authors && pub.detailed_authors.length > 0) {
