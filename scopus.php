@@ -349,16 +349,41 @@ document.querySelectorAll('.filter-option').forEach(option => {
     });
 });
 
+// function getDocumentTypeFull(pub) {
+//     const type = pub['subtypeDescription'] || '';
+//     const aggType = pub['prism:aggregationType'] || '';
+//     if (aggType === 'Conference Proceeding' && type === 'Conference Paper') {
+//         return 'Conference paper';
+//     }
+//     if (aggType === 'Journal' && type === 'Article') return 'Journal article';
+//     if (aggType === 'Book') return 'Book chapter';
+//     return type;
+// }
 function getDocumentTypeFull(pub) {
     const type = pub['subtypeDescription'] || '';
     const aggType = pub['prism:aggregationType'] || '';
-    if (aggType === 'Conference Proceeding' && type === 'Conference Paper') {
+
+    // Conference Paper (หรือ Workshop Paper, Symposium Paper)
+    if ((aggType === 'Conference Proceeding' || aggType === 'Book Series') && (type === 'Conference Paper' || type === 'Workshop Paper' || type === 'Symposium Paper')) {
         return 'Conference paper';
     }
-    if (aggType === 'Journal' && type === 'Article') return 'Journal article';
-    if (aggType === 'Book') return 'Book chapter';
+
+    // Journal Article หรือ Review Article
+    if (aggType === 'Journal' && (type === 'Article' || type === 'Review Article')) {
+        return 'Journal article';
+    }
+
+    // Book Chapter (หรือ Book Series, Monograph)
+    if (aggType === 'Book' && type === 'Book chapter') return 'Book chapter';
+    if (aggType === 'Book Series' && type === 'Book Chapter') return 'Book chapter';
+    if (aggType === 'Monograph' && type === 'Book Chapter') return 'Book chapter';
+
+    if (!aggType || !type) {
+        return 'Unknown document type';
+    }
+
     return type;
-} // Conference Proceeding is key to debug
+}
 
 function formatContributors(pub) {
     if (pub.detailed_authors && pub.detailed_authors.length > 0) {
