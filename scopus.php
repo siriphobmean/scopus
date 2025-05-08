@@ -2,7 +2,7 @@
 $baseUrl = "https://api.elsevier.com/content/search/scopus";
 $baseUrl2 = "https://api.elsevier.com/content/abstract/eid";
 $apiKey = "ae7e84e02386105442a7e6d7919f5d4e";
-$authorId = "23096399800";
+$authorId = "57184355700";
 
 function fetchPublications($baseUrl, $apiKey, $authorId)
 {
@@ -200,12 +200,6 @@ foreach ($publications as $publication) {
             display: none;
         }
 
-        /* .filter-option {
-            cursor: pointer;
-            padding: 4px 0;
-            color: black;
-        } */
-
         .filter-option {
             display: flex;
             justify-content: space-between;
@@ -340,6 +334,7 @@ foreach ($publications as $publication) {
 <script>
 const publications = <?php echo json_encode($publicationsWithAuthors); ?>;
 const container = document.getElementById('publication-container');
+const fixedAuthorId = "<?php echo $authorId; ?>";
 
 let sortOrderTitle = 'desc';
 let sortOrderDate = 'desc';
@@ -381,16 +376,6 @@ document.querySelectorAll('.filter-option').forEach(option => {
     });
 });
 
-// function getDocumentTypeFull(pub) {
-//     const type = pub['subtypeDescription'] || '';
-//     const aggType = pub['prism:aggregationType'] || '';
-//     if (aggType === 'Conference Proceeding' && type === 'Conference Paper') {
-//         return 'Conference paper';
-//     }
-//     if (aggType === 'Journal' && type === 'Article') return 'Journal article';
-//     if (aggType === 'Book') return 'Book chapter';
-//     return type;
-// }
 function getDocumentTypeFull(pub) {
     const type = pub['subtypeDescription'] || '';
     const aggType = pub['prism:aggregationType'] || '';
@@ -547,7 +532,13 @@ function renderCards(data) {
                 </div>
                 <div class="card-footer">
                     <strong style="color: #f26522;">Source:</strong>
-                    Elsevier's Scopus
+                    <a 
+                        href="https://www.scopus.com/authid/detail.uri?authorId=${fixedAuthorId}" 
+                        target="_blank" 
+                        class="hover-link"
+                        style="text-decoration: none; color: black !important;">
+                        Elsevier's Scopus
+                    </a>
                 </div>
             </div>`;
         container.innerHTML += html;
