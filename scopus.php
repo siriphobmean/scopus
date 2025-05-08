@@ -156,6 +156,19 @@ foreach ($publications as $publication) {
             /* z-index: 10; */
         }
 
+        .dropdown-menu-filter {
+            display: none;
+            position: absolute;
+            background-color: white;
+            border: 1px solid #cccccc;
+            border-radius: 6px;
+            padding: 8px;
+            top: 30px;
+            right: 0px;
+            min-width: 170px;
+            /* z-index: 10; */
+        }
+
         .icon-btn {
             font-size: 24px;
             cursor: pointer;
@@ -175,6 +188,10 @@ foreach ($publications as $publication) {
         }
 
         .menu-container.open .dropdown-menu {
+            display: block;
+        }
+
+        .menu-container.open .dropdown-menu-filter {
             display: block;
         }
 
@@ -224,7 +241,22 @@ foreach ($publications as $publication) {
             gap: 10px;
         }
 
+        .dropdown-menu-filter a {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 12px;
+            text-decoration: none;
+            color: #000;
+            gap: 10px;
+        }
+
         .dropdown-menu a:hover {
+            /* color: #f26522; */
+            background-color: #f2f2f2;
+        }
+
+        .dropdown-menu-filter a:hover {
             /* color: #f26522; */
             background-color: #f2f2f2;
         }
@@ -276,11 +308,11 @@ foreach ($publications as $publication) {
             <!-- Filter Menu -->
             <div class="menu-container filter-menu">
                 <div class="icon-btn" id="filter-icon"><i class="fas fa-filter"></i><span style="font-size: 16px">Filter</span></div>
-                <div class="dropdown-menu" id="filter-menu">
-                    <div class="filter-option active" data-type="all">All</div>
-                    <div class="filter-option" data-type="Conference paper">Conference paper</div>
-                    <div class="filter-option" data-type="Journal article">Journal article</div>
-                    <div class="filter-option" data-type="Book chapter">Book chapter</div>
+                <div class="dropdown-menu-filter" id="filter-menu">
+                    <div class="filter-option active" data-type="all">• All</div>
+                    <div class="filter-option" data-type="Conference paper">• Conference paper</div>
+                    <div class="filter-option" data-type="Journal article">• Journal article</div>
+                    <div class="filter-option" data-type="Book chapter">• Book chapter</div>
                 </div>
             </div>
             <!-- Sort Menu -->
