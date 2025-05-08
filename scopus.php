@@ -43,20 +43,16 @@ function fetchAuthors($baseUrl2, $apiKey, $eid)
     
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    
+    curl_close($ch);
+
     if ($httpCode === 200) {
         $data = json_decode($response, true);
-        curl_close($ch);
-        
         if (isset($data['abstracts-retrieval-response']['authors']['author'])) {
             return $data['abstracts-retrieval-response']['authors']['author'];
         }
-    } else {
-        echo "Error fetching authors: HTTP status code $httpCode\n";
     }
-    
-    curl_close($ch);
-    return [];
+
+    return false;
 }
 
 $publications = fetchPublications($baseUrl, $apiKey, $authorId);
@@ -199,12 +195,6 @@ foreach ($publications as $publication) {
             /* margin-left: 4px; */
             display: none;
         }
-
-        /* .filter-option {
-            cursor: pointer;
-            padding: 4px 0;
-            color: black;
-        } */
 
         .filter-option {
             display: flex;
@@ -382,16 +372,6 @@ document.querySelectorAll('.filter-option').forEach(option => {
     });
 });
 
-// function getDocumentTypeFull(pub) {
-//     const type = pub['subtypeDescription'] || '';
-//     const aggType = pub['prism:aggregationType'] || '';
-//     if (aggType === 'Conference Proceeding' && type === 'Conference Paper') {
-//         return 'Conference paper';
-//     }
-//     if (aggType === 'Journal' && type === 'Article') return 'Journal article';
-//     if (aggType === 'Book') return 'Book chapter';
-//     return type;
-// }
 function getDocumentTypeFull(pub) {
     const type = pub['subtypeDescription'] || '';
     const aggType = pub['prism:aggregationType'] || '';
@@ -434,6 +414,11 @@ function formatContributors(pub) {
         });
 
         return authorsList.join('; ');
+    }
+
+    // เช็คกรณี detailed_authors เป็น false (error ตอน fetch)
+    if (pub.detailed_authors === false) {
+        return `${pub['dc:creator'] || 'No contributors found'} <span style="color: #D32F2F;">(Unable to fetch additional authors at the moment.)</span>`;
     }
 
     return pub['dc:creator'] || 'No contributors found';
