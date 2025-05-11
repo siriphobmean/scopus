@@ -59,6 +59,7 @@ function fetchPublications($baseUrl, $apiKey, $authorId)
 //     curl_close($ch);
 //     return [];
 // }
+
 function fetchAuthors($baseUrl2, $apiKey, $eid)
 {
     $url = $baseUrl2 . "/" . $eid . "?apiKey=" . $apiKey;
@@ -111,11 +112,15 @@ $publicationsWithAuthors = [];
 foreach ($publications as $publication) {
     $eid = $publication['eid'] ?? '';
     if (!empty($eid)) {
+        sleep(1);
         $authors = fetchAuthors($baseUrl2, $apiKey, $eid);
         $publication['detailed_authors'] = $authors;
     }
     $publicationsWithAuthors[] = $publication;
 }
+// echo '<pre>';
+// print_r($publicationsWithAuthors);
+// echo '</pre>';
 ?>
 
 <!DOCTYPE html>
