@@ -32,6 +32,33 @@ function fetchPublications($baseUrl, $apiKey, $authorId)
     return [];
 }
 
+// function fetchAuthors($baseUrl2, $apiKey, $eid)
+// {
+//     $url = $baseUrl2 . "/" . $eid . "?apiKey=" . $apiKey;
+    
+//     $ch = curl_init();
+//     curl_setopt($ch, CURLOPT_URL, $url);
+//     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+//     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Accept: application/json']);
+    
+//     $response = curl_exec($ch);
+//     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    
+//     if ($httpCode === 200) {
+//         $data = json_decode($response, true);
+//         curl_close($ch);
+        
+//         if (isset($data['abstracts-retrieval-response']['authors']['author'])) {
+//             return $data['abstracts-retrieval-response']['authors']['author'];
+//         }
+//     } else {
+//         // echo "Error fetching authors: HTTP status code $httpCode\n";
+//         echo "Unable to fetch author data at the moment. Please try again later.";
+//     }
+    
+//     curl_close($ch);
+//     return [];
+// }
 function fetchAuthors($baseUrl2, $apiKey, $eid)
 {
     $url = $baseUrl2 . "/" . $eid . "?apiKey=" . $apiKey;
@@ -195,6 +222,12 @@ foreach ($publications as $publication) {
             /* margin-left: 4px; */
             display: none;
         }
+
+        /* .filter-option {
+            cursor: pointer;
+            padding: 4px 0;
+            color: black;
+        } */
 
         .filter-option {
             display: flex;
@@ -372,6 +405,16 @@ document.querySelectorAll('.filter-option').forEach(option => {
     });
 });
 
+// function getDocumentTypeFull(pub) {
+//     const type = pub['subtypeDescription'] || '';
+//     const aggType = pub['prism:aggregationType'] || '';
+//     if (aggType === 'Conference Proceeding' && type === 'Conference Paper') {
+//         return 'Conference paper';
+//     }
+//     if (aggType === 'Journal' && type === 'Article') return 'Journal article';
+//     if (aggType === 'Book') return 'Book chapter';
+//     return type;
+// }
 function getDocumentTypeFull(pub) {
     const type = pub['subtypeDescription'] || '';
     const aggType = pub['prism:aggregationType'] || '';
@@ -402,11 +445,7 @@ function formatContributors(pub) {
     if (pub.detailed_authors && pub.detailed_authors.length > 0) {
         const authorsList = pub.detailed_authors.map(author => {
             const indexedName = author['ce:indexed-name'];
-            const auid = author['@auid'] || author['auid'] || '';
-
-            if (indexedName && auid) {
-                return `<a href="https://www.scopus.com/authid/detail.uri?authorId=${auid}" class="hover-link" target="_blank">${indexedName}</a>`;
-            } else if (indexedName) {
+            if (indexedName) {
                 return indexedName;
             } else {
                 return 'Unknown Author';
