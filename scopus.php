@@ -1,6 +1,5 @@
 <?php
 $baseUrl = "https://api.elsevier.com/content/search/scopus";
-$baseUrl2 = "https://api.elsevier.com/content/abstract/eid";
 $apiKey = "ae7e84e02386105442a7e6d7919f5d4e";
 $authorId = "23096399800";
 
@@ -9,6 +8,7 @@ function fetchPublications($baseUrl, $apiKey, $authorId)
     $queryParams = http_build_query([
         "query" => "AU-ID($authorId)",
         "apiKey" => $apiKey,
+        "view" => "COMPLETE",
     ]);
 
     $url = $baseUrl . "?" . $queryParams;
@@ -16,6 +16,7 @@ function fetchPublications($baseUrl, $apiKey, $authorId)
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Accept: application/json']);
 
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -32,55 +33,36 @@ function fetchPublications($baseUrl, $apiKey, $authorId)
     return [];
 }
 
-// function fetchAuthors($baseUrl2, $apiKey, $eid)
-// {
-//     $url = $baseUrl2 . "/" . $eid . "?apiKey=" . $apiKey;
-    
-//     $ch = curl_init();
-//     curl_setopt($ch, CURLOPT_URL, $url);
-//     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-//     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Accept: application/json']);
-    
-//     $response = curl_exec($ch);
-//     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    
-//     if ($httpCode === 200) {
-//         $data = json_decode($response, true);
-//         curl_close($ch);
-        
-//         if (isset($data['abstracts-retrieval-response']['authors']['author'])) {
-//             return $data['abstracts-retrieval-response']['authors']['author'];
-//         }
-//     } else {
-//         // echo "Error fetching authors: HTTP status code $httpCode\n";
-//         echo "Unable to fetch author data at the moment. Please try again later.";
-//     }
-    
-//     curl_close($ch);
-//     return [];
-// }
-
-function fetchAuthors($baseUrl2, $apiKey, $eid)
+function extractAuthorsFromPublication($publication) 
 {
-    $url = $baseUrl2 . "/" . $eid . "?apiKey=" . $apiKey;
+    $authors = [];
     
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Accept: application/json']);
+    if (isset($publication['author'])) {
+        return $publication['author'];
+    }
     
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($httpCode === 200) {
-        $data = json_decode($response, true);
-        if (isset($data['abstracts-retrieval-response']['authors']['author'])) {
-            return $data['abstracts-retrieval-response']['authors']['author'];
+    if (isset($publication['dc:creator'])) {
+        $creatorNames = explode(', ', $publication['dc:creator']);
+        foreach ($creatorNames as $index => $name) {
+            $nameParts = explode(' ', $name);
+            if (count($nameParts) > 1) {
+                $surname = array_pop($nameParts);
+                $givenName = implode(' ', $nameParts);
+            } else {
+                $surname = $name;
+                $givenName = '';
+            }
+            
+            $authors[] = [
+                '@seq' => $index + 1,
+                'ce:given-name' => $givenName,
+                'ce:surname' => $surname,
+                '@auid' => $publication['author-count'] ?? ''
+            ];
         }
     }
-
-    return false;
+    
+    return $authors;
 }
 
 $publications = fetchPublications($baseUrl, $apiKey, $authorId);
@@ -110,17 +92,10 @@ if (empty($publications)) {
 
 $publicationsWithAuthors = [];
 foreach ($publications as $publication) {
-    $eid = $publication['eid'] ?? '';
-    if (!empty($eid)) {
-        sleep(1);
-        $authors = fetchAuthors($baseUrl2, $apiKey, $eid);
-        $publication['detailed_authors'] = $authors;
-    }
+    $publication['detailed_authors'] = extractAuthorsFromPublication($publication);
+    
     $publicationsWithAuthors[] = $publication;
 }
-// echo '<pre>';
-// print_r($publicationsWithAuthors);
-// echo '</pre>';
 ?>
 
 <!DOCTYPE html>
@@ -227,12 +202,6 @@ foreach ($publications as $publication) {
             /* margin-left: 4px; */
             display: none;
         }
-
-        /* .filter-option {
-            cursor: pointer;
-            padding: 4px 0;
-            color: black;
-        } */
 
         .filter-option {
             display: flex;
@@ -410,16 +379,6 @@ document.querySelectorAll('.filter-option').forEach(option => {
     });
 });
 
-// function getDocumentTypeFull(pub) {
-//     const type = pub['subtypeDescription'] || '';
-//     const aggType = pub['prism:aggregationType'] || '';
-//     if (aggType === 'Conference Proceeding' && type === 'Conference Paper') {
-//         return 'Conference paper';
-//     }
-//     if (aggType === 'Journal' && type === 'Article') return 'Journal article';
-//     if (aggType === 'Book') return 'Book chapter';
-//     return type;
-// }
 function getDocumentTypeFull(pub) {
     const type = pub['subtypeDescription'] || '';
     const aggType = pub['prism:aggregationType'] || '';
@@ -448,21 +407,8 @@ function getDocumentTypeFull(pub) {
 
 function formatContributors(pub) {
     if (pub.detailed_authors && pub.detailed_authors.length > 0) {
-        const authorsList = pub.detailed_authors.map(author => {
-            const indexedName = author['ce:indexed-name'];
-            if (indexedName) {
-                return indexedName;
-            } else {
-                return 'Unknown Author';
-            }
-        });
-
-        return authorsList.join('; ');
-    }
-
-    // เช็คกรณี detailed_authors เป็น false (error ตอน fetch)
-    if (pub.detailed_authors === false) {
-        return `${pub['dc:creator'] || 'No contributors found'} <span style="color: #D32F2F;">(Unable to fetch additional authors at the moment.)</span>`;
+        const names = pub.detailed_authors.map(author => author['authname'] || '');
+        return names.join(', ');
     }
 
     return pub['dc:creator'] || 'No contributors found';
