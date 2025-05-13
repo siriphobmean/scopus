@@ -279,18 +279,19 @@ foreach ($publications as $publication) {
             content: '';
             position: absolute;
             width: 100%;
-            min-height: 2px;
+            height: 2px;
             bottom: -2px;
             left: 0;
             background-color: #f26522;
             transform: scaleX(0);
             transform-origin: left;
             transition: transform 0.4s ease-out;
+            display: block;
+            box-sizing: border-box;
         }
 
         .hover-link:hover::after {
             transform: scaleX(1);
-            min-height: 2px;
         }
     </style>
 </head>
