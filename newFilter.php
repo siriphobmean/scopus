@@ -14,126 +14,115 @@ function fetchPublications($baseUrl, $apiKey, $authorId)
     $url = $baseUrl . "?" . $queryParams;
 
     $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Accept: application/json']);
+    curl_setopt_array($ch, [
+        CURLOPT_URL => $url,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => ["Accept: application/json"],
+        CURLOPT_TIMEOUT => 10,
+    ]);
 
     $response = curl_exec($ch);
+
+    if ($response === false) {
+        echo "cURL Error: " . curl_error($ch) . "\n";
+        curl_close($ch);
+        return [];
+    }
+
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
 
     if ($httpCode === 200) {
         $data = json_decode($response, true);
-        curl_close($ch);
         return $data["search-results"]["entry"] ?? [];
     } else {
         echo "Error: HTTP status code $httpCode\n";
+        return [];
     }
+} // Check: Ok
 
-    curl_close($ch);
-    return [];
-}
-
-function extractAuthorsFromPublication($publication) 
+function extractAuthorsFromPublication($publication)
 {
     $authors = [];
-    
-    if (isset($publication['author'])) {
-        return $publication['author'];
+
+    if (isset($publication["author"])) {
+        return $publication["author"];
     }
-    
-    if (isset($publication['dc:creator'])) {
-        $creatorNames = explode(', ', $publication['dc:creator']);
+
+    if (isset($publication["dc:creator"])) {
+        $creatorNames = explode(", ", $publication["dc:creator"]);
         foreach ($creatorNames as $index => $name) {
-            $nameParts = explode(' ', $name);
+            $nameParts = explode(" ", $name);
             if (count($nameParts) > 1) {
                 $surname = array_pop($nameParts);
-                $givenName = implode(' ', $nameParts);
+                $givenName = implode(" ", $nameParts);
             } else {
                 $surname = $name;
-                $givenName = '';
+                $givenName = "";
             }
-            
+
             $authors[] = [
-                '@seq' => $index + 1,
-                'ce:given-name' => $givenName,
-                'ce:surname' => $surname,
-                '@auid' => $publication['author-count'] ?? ''
+                "@seq" => $index + 1,
+                "ce:given-name" => $givenName,
+                "ce:surname" => $surname,
+                "@auid" => $publication["author-count"] ?? "",
             ];
         }
     }
-    
+
     return $authors;
-}
+} // Check: Ok
 
 $publications = fetchPublications($baseUrl, $apiKey, $authorId);
 
-if (empty($publications)) {
-    echo "No publications found or there was an error with the API request.";
-}
-
 $publicationsWithAuthors = [];
 foreach ($publications as $publication) {
-    $publication['detailed_authors'] = extractAuthorsFromPublication($publication);
-    
+    $publication["detailed_authors"] = extractAuthorsFromPublication(
+        $publication
+    );
+
     $publicationsWithAuthors[] = $publication;
-}
+} // Check: Ok
 
 $documentTypes = [];
 foreach ($publications as $pub) {
-    $type = $pub['subtypeDescription'] ?? '';
-    $aggType = $pub['prism:aggregationType'] ?? '';
+    $type = $pub["subtypeDescription"] ?? "";
+    $aggType = $pub["prism:aggregationType"] ?? "";
 
-    // แสดงค่า aggType และ type ก่อนการจัดหมวดหมู่
-    // echo "aggType: $aggType, type: $type<br>";
-
-    // กรณี Conference paper
-    if (
-        in_array($aggType, ['Conference Proceeding', 'Book Series']) &&
-        $type === 'Conference Paper'
-    ) {
-        $documentTypes[] = 'Conference paper';
+    // Conference paper
+    if (in_array($aggType, ["Conference Proceeding", "Book Series"]) && $type === "Conference Paper") {
+        $documentTypes[] = "Conference paper";
     }
 
-    // กรณี Journal article
-    if (
-        $aggType === 'Journal' &&
-        in_array($type, ['Article', 'Short Survey', 'Review', 'Erratum', 'Letter'])
-    ) {
-        $documentTypes[] = 'Journal article';
+    // Journal article
+    elseif ($aggType === "Journal" && in_array($type, ["Article", "Short Survey", "Review", "Erratum", "Letter"])) {
+        $documentTypes[] = "Journal article";
     }
 
-    // กรณี Book chapter
-    if (
-        in_array($aggType, ['Book', 'Book Series']) &&
-        in_array($type, ['Book Chapter', 'Chapter'])
-    ) {
-        $documentTypes[] = 'Book chapter';
+    // Book chapter
+    elseif (in_array($aggType, ["Book", "Book Series"]) && in_array($type, ["Book Chapter", "Chapter"])) {
+        $documentTypes[] = "Book chapter";
     }
 
-    // กรณี Whole book
-    if (
-        $aggType === 'Book' &&
-        in_array($type, ['Book', 'Edited Book'])
-    ) {
-        $documentTypes[] = 'Book';
+    // Whole book
+    elseif ($aggType === "Book" && in_array($type, ["Book", "Edited Book"])) {
+        $documentTypes[] = "Book";
     }
 
-    // กรณี Editorial
-    if ($type === 'Editorial') {
-        $documentTypes[] = 'Editorial';
+    // Editorial
+    elseif ($type === "Editorial") {
+        $documentTypes[] = "Editorial";
     }
 
-    // กรณี Note, Letter, etc.
-    if (in_array($type, ['Note', 'Letter', 'Erratum'])) {
-        $documentTypes[] =$type;
+    // Note, Letter, etc.
+    elseif (in_array($type, ["Note", "Letter", "Erratum"])) {
+        $documentTypes[] = $type;
     }
-
-    // เผื่อกรณีที่ไม่มีตรงเงื่อนไขข้างต้น
-    if (empty($documentTypes)) {
-        $documentTypes[] = 'Other';
-    }
-
 }
+
+if (empty($documentTypes)) {
+    $documentTypes[] = "Other";
+} // Continue
 $documentTypes = array_unique($documentTypes);
 ?>
 
@@ -338,7 +327,9 @@ $documentTypes = array_unique($documentTypes);
 <?php if (!empty($publicationsWithAuthors)): ?>
     <div style="background-color: #f26522; color: white; padding: 16px; display: flex; justify-content: space-between; align-items: center; border-radius: 6px">
         <div style="font-size: 20px; font-weight: bold;">
-            <span id="pub-count">Works (<?php echo count($publicationsWithAuthors); ?>)</span>
+            <span id="pub-count">Works (<?php echo count(
+                $publicationsWithAuthors
+            ); ?>)</span>
         </div>
         <div class="controls-container">
             <!-- Filter Menu -->
@@ -347,7 +338,9 @@ $documentTypes = array_unique($documentTypes);
                 <div class="dropdown-menu-filter" id="filter-menu">
                     <div class="filter-option active" data-type="all">• All</div>
                     <?php foreach ($documentTypes as $type): ?>
-                        <div class="filter-option" data-type="<?php echo htmlspecialchars($type); ?>">• <?php echo htmlspecialchars($type); ?></div>
+                        <div class="filter-option" data-type="<?php echo htmlspecialchars(
+                            $type
+                        ); ?>">• <?php echo htmlspecialchars($type); ?></div>
                     <?php endforeach; ?>
                 </div>
             </div>
@@ -427,34 +420,22 @@ function getDocumentTypeFull(pub) {
     const aggTypeLower = aggType.toLowerCase();
 
     // Conference Paper
-    if (
-        ['conference proceeding', 'book series'].includes(aggTypeLower) &&
-        typeLower === 'conference paper'
-    ) {
+    if (['conference proceeding', 'book series'].includes(aggTypeLower) && typeLower === 'conference paper') {
         return 'Conference paper';
     }
 
     // Journal Article
-    if (
-        aggTypeLower === 'journal' &&
-        ['article', 'short survey', 'review', 'erratum', 'letter'].includes(typeLower)
-    ) {
+    if (aggTypeLower === 'journal' && ['article', 'short survey', 'review', 'erratum', 'letter'].includes(typeLower)) {
         return 'Journal article';
     }
 
     // Book Chapter
-    if (
-        ['book', 'book series'].includes(aggTypeLower) &&
-        ['book chapter', 'chapter'].includes(typeLower)
-    ) {
+    if (['book', 'book series'].includes(aggTypeLower) && ['book chapter', 'chapter'].includes(typeLower)) {
         return 'Book chapter';
     }
 
     // Whole Book
-    if (
-        aggTypeLower === 'book' &&
-        ['book', 'edited book'].includes(typeLower)
-    ) {
+    if (aggTypeLower === 'book' && ['book', 'edited book'].includes(typeLower)) {
         return 'Book';
     }
 
@@ -465,18 +446,12 @@ function getDocumentTypeFull(pub) {
 
     // Note / Letter / Erratum (individual types)
     if (['note', 'letter', 'erratum'].includes(typeLower)) {
-        return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
+        return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase(); // Capitalize only first letter
     }
 
-    // Fallbacks
-    // if (!aggType && !type) {
-    //     return 'Unknown document type';
-    // }
+    // Fallback: Return default "Other" if no match
     return 'Other';
-
-    // Default: return raw type with first letter capitalized
-    return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
-}
+} // Continue
 
 function formatContributors(pub) {
     if (pub.detailed_authors && pub.detailed_authors.length > 0) {
@@ -485,7 +460,7 @@ function formatContributors(pub) {
     }
 
     return pub['dc:creator'] || 'No contributors found';
-}
+} // Check: Ok
 
 function applyFiltersAndSort() {
     let filtered = [...publications];
@@ -498,32 +473,33 @@ function applyFiltersAndSort() {
     }
     
     if (activeSort === 'date') {
-        if (sortOrderDate === 'asc') {
-            filtered.sort((a, b) => new Date(a['prism:coverDate']) - new Date(b['prism:coverDate']));
-        } else {
-            filtered.sort((a, b) => new Date(b['prism:coverDate']) - new Date(a['prism:coverDate']));
-        }
+        filtered.sort((a, b) => {
+            const dateA = new Date(a['prism:coverDate']);
+            const dateB = new Date(b['prism:coverDate']);
+            return sortOrderDate === 'asc' ? dateA - dateB : dateB - dateA;
+        });
     } else if (activeSort === 'title') {
-        if (sortOrderTitle === 'asc') {
-            filtered.sort((a, b) => a['dc:title'].localeCompare(b['dc:title']));
-        } else {
-            filtered.sort((a, b) => b['dc:title'].localeCompare(a['dc:title']));
-        }
+        filtered.sort((a, b) => {
+            const titleA = a['dc:title'] || '';
+            const titleB = b['dc:title'] || '';
+            return sortOrderTitle === 'asc' ? titleA.localeCompare(titleB) : titleB.localeCompare(titleA);
+        });
     } else if (activeSort === 'type') {
-        if (sortOrderType === 'asc') {
-            filtered.sort((a, b) => getDocumentTypeFull(a).localeCompare(getDocumentTypeFull(b)));
-        } else {
-            filtered.sort((a, b) => getDocumentTypeFull(b).localeCompare(getDocumentTypeFull(a)));
-        }
+        filtered.sort((a, b) => {
+            const typeA = getDocumentTypeFull(a);
+            const typeB = getDocumentTypeFull(b);
+            return sortOrderType === 'asc' ? typeA.localeCompare(typeB) : typeB.localeCompare(typeA);
+        });
     }
     
     document.getElementById('pub-count').textContent = `Works (${filtered.length})`;
     
     renderCards(filtered);
-}
+} // Check: Ok
 
 function renderCards(data) {
     container.innerHTML = '';
+    
     if (data.length === 0) {
         container.innerHTML = '<div style="margin-top: 20px; text-align: center;">No publications found matching the selected filter.</div>';
         return;
@@ -561,7 +537,9 @@ function renderCards(data) {
             }
 
             const cleaned = values.map(isbn => isbn.replace(/[^\dXx]/g, ''));
-            const links = cleaned.map(isbn => `<a href="https://search.worldcat.org/th/search?q=bn:${isbn}" class="hover-link" target="_blank">${isbn}</a>`);
+            const links = cleaned.map(isbn => {
+                return `<a href="https://search.worldcat.org/th/search?q=bn:${isbn}" class="hover-link" target="_blank">${isbn}</a>`;
+            });
             isbnHTML = `<p>Part of ISBN: ${links.join(' ')}</p>`;
         }
 
@@ -582,7 +560,7 @@ function renderCards(data) {
         const doiHTML = doi ? `<p>DOI: <a href="https://doi.org/${doi}" class="hover-link" target="_blank">${doi}</a></p>` : '';
         const contributorHTML = `<p>CONTRIBUTORS: ${contributorsHTML}</p>`;
 
-        const html = `
+        const cardHTML = `
             <div class="card">
                 <div class="card-header"><b><div>${title}</div></b></div>
                 <div class="card-content">
@@ -605,59 +583,51 @@ function renderCards(data) {
                     </a>
                 </div>
             </div>`;
-        container.innerHTML += html;
+
+        container.innerHTML += cardHTML;
     });
-}
+} // Check: Ok
 
 function updateSortIcons(active, order) {
-    const titleIcon = document.getElementById('sort-title-arrow');
-    const dateIcon = document.getElementById('sort-date-arrow');
-    const typeIcon = document.getElementById('sort-type-arrow');
+    const icons = {
+        title: document.getElementById('sort-title-arrow'),
+        date: document.getElementById('sort-date-arrow'),
+        type: document.getElementById('sort-type-arrow')
+    };
 
-    titleIcon.style.display = 'none';
-    dateIcon.style.display = 'none';
-    typeIcon.style.display = 'none';
+    Object.values(icons).forEach(icon => icon.style.display = 'none');
 
-    if (active === 'date') {
-        dateIcon.style.display = 'inline';
-        dateIcon.classList.remove('fa-arrow-up', 'fa-arrow-down');
-        dateIcon.classList.add(order === 'asc' ? 'fa-arrow-up' : 'fa-arrow-down');
-    } else if (active === 'title') {
-        titleIcon.style.display = 'inline';
-        titleIcon.classList.remove('fa-arrow-up', 'fa-arrow-down');
-        titleIcon.classList.add(order === 'asc' ? 'fa-arrow-up' : 'fa-arrow-down');
-    } else if (active === 'type') {
-        typeIcon.style.display = 'inline';
-        typeIcon.classList.remove('fa-arrow-up', 'fa-arrow-down');
-        typeIcon.classList.add(order === 'asc' ? 'fa-arrow-up' : 'fa-arrow-down');
+    if (icons[active]) {
+        icons[active].style.display = 'inline';
+        icons[active].classList.remove('fa-arrow-up', 'fa-arrow-down');
+        icons[active].classList.add(order === 'asc' ? 'fa-arrow-up' : 'fa-arrow-down');
     }
-}
+} // Check: Ok
 
 function sortPublications(sortBy, event) {
     event.preventDefault();
     event.stopPropagation();
     document.querySelector('.sort-menu').classList.remove('open');
-    
-    if (sortBy === 'date') {
-        sortOrderDate = sortOrderDate === 'desc' ? 'asc' : 'desc';
-        activeSort = 'date';
-        updateSortIcons('date', sortOrderDate);
-    } else if (sortBy === 'title') {
-        sortOrderTitle = sortOrderTitle === 'desc' ? 'asc' : 'desc';
-        activeSort = 'title';
-        updateSortIcons('title', sortOrderTitle);
-    } else if (sortBy === 'type') {
-        sortOrderType = sortOrderType === 'desc' ? 'asc' : 'desc';
-        activeSort = 'type';
-        updateSortIcons('type', sortOrderType);
+
+    const sortOptions = {
+        date: { order: sortOrderDate, update: () => { sortOrderDate = toggleSortOrder(sortOrderDate); activeSort = 'date'; updateSortIcons('date', sortOrderDate); } },
+        title: { order: sortOrderTitle, update: () => { sortOrderTitle = toggleSortOrder(sortOrderTitle); activeSort = 'title'; updateSortIcons('title', sortOrderTitle); } },
+        type: { order: sortOrderType, update: () => { sortOrderType = toggleSortOrder(sortOrderType); activeSort = 'type'; updateSortIcons('type', sortOrderType); } },
+    };
+
+    if (sortOptions[sortBy]) {
+        sortOptions[sortBy].update();
     }
 
     applyFiltersAndSort();
 }
 
+function toggleSortOrder(order) {
+    return order === 'desc' ? 'asc' : 'desc';
+} // Check: Ok
+
 updateSortIcons('date', sortOrderDate);
 applyFiltersAndSort();
 </script>
-
 </body>
 </html>
