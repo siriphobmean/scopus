@@ -1,7 +1,7 @@
 <?php
 $baseUrl = "https://api.elsevier.com/content/search/scopus";
 $apiKey = "ae7e84e02386105442a7e6d7919f5d4e";
-$authorId = "23096399800";
+$authorId = "23096399800"; // Scopus Author ID
 
 function fetchPublications($baseUrl, $apiKey, $authorId)
 {
@@ -67,25 +67,6 @@ function extractAuthorsFromPublication($publication)
 
 $publications = fetchPublications($baseUrl, $apiKey, $authorId);
 
-function getDocumentTypeFull($publication)
-{
-    $type = $publication["subtypeDescription"] ?? "";
-    $aggType = $publication["prism:aggregationType"] ?? "";
-
-    if ($aggType === "Journal" && $type === "Article") {
-        return "Journal article";
-    } elseif (
-        $aggType === "Conference Proceeding" &&
-        $type === "Conference Paper"
-    ) {
-        return "Conference paper";
-    } elseif ($aggType === "Book") {
-        return "Book chapter";
-    }
-
-    return $type;
-}
-
 if (empty($publications)) {
     echo "No publications found or there was an error with the API request.";
 }
@@ -96,6 +77,61 @@ foreach ($publications as $publication) {
     
     $publicationsWithAuthors[] = $publication;
 }
+
+$documentTypes = [];
+foreach ($publications as $pub) {
+    $type = $pub['subtypeDescription'] ?? '';
+    $aggType = $pub['prism:aggregationType'] ?? '';
+
+    // กรณี Conference paper
+    if (
+        in_array($aggType, ['Conference Proceeding', 'Book Series']) &&
+        $type === 'Conference Paper'
+    ) {
+        $documentTypes[] = 'Conference paper';
+    }
+
+    // กรณี Journal article
+    if (
+        $aggType === 'Journal' &&
+        in_array($type, ['Article', 'Short Survey', 'Review', 'Erratum', 'Letter'])
+    ) {
+        $documentTypes[] = 'Journal article';
+    }
+
+    // กรณี Book chapter
+    if (
+        in_array($aggType, ['Book', 'Book Series']) &&
+        in_array($type, ['Book Chapter', 'Chapter'])
+    ) {
+        $documentTypes[] = 'Book chapter';
+    }
+
+    // กรณี Whole book
+    if (
+        $aggType === 'Book' &&
+        in_array($type, ['Book', 'Edited Book'])
+    ) {
+        $documentTypes[] = 'Book';
+    }
+
+    // กรณี Editorial
+    if ($type === 'Editorial') {
+        $documentTypes[] = 'Editorial';
+    }
+
+    // กรณี Note, Letter, etc.
+    if (in_array($type, ['Note', 'Letter', 'Erratum'])) {
+        $documentTypes[] =$type;
+    }
+
+    // เผื่อกรณีที่ไม่มีตรงเงื่อนไขข้างต้น
+    if (empty($documentTypes)) {
+        $documentTypes[] = 'Other';
+    }
+
+}
+$documentTypes = array_unique($documentTypes);
 ?>
 
 <!DOCTYPE html>
@@ -199,7 +235,6 @@ foreach ($publications as $publication) {
         }
 
         .sort-arrow {
-            /* margin-left: 4px; */
             display: none;
         }
 
@@ -308,9 +343,9 @@ foreach ($publications as $publication) {
                 <div class="icon-btn" id="filter-icon"><i class="fas fa-filter"></i><span style="font-size: 16px">Filter</span></div>
                 <div class="dropdown-menu-filter" id="filter-menu">
                     <div class="filter-option active" data-type="all">• All</div>
-                    <div class="filter-option" data-type="Conference paper">• Conference paper</div>
-                    <div class="filter-option" data-type="Journal article">• Journal article</div>
-                    <div class="filter-option" data-type="Book chapter">• Book chapter</div>
+                    <?php foreach ($documentTypes as $type): ?>
+                        <div class="filter-option" data-type="<?php echo htmlspecialchars($type); ?>">• <?php echo htmlspecialchars($type); ?></div>
+                    <?php endforeach; ?>
                 </div>
             </div>
             <!-- Sort Menu -->
@@ -384,26 +419,60 @@ function getDocumentTypeFull(pub) {
     const type = pub['subtypeDescription'] || '';
     const aggType = pub['prism:aggregationType'] || '';
 
-    // Conference Paper (หรือ Workshop Paper, Symposium Paper)
-    if ((aggType === 'Conference Proceeding' || aggType === 'Book Series') && (type === 'Conference Paper' || type === 'Workshop Paper' || type === 'Symposium Paper')) {
+    // Normalize type for case-insensitive comparison
+    const typeLower = type.toLowerCase();
+    const aggTypeLower = aggType.toLowerCase();
+
+    // Conference Paper
+    if (
+        ['conference proceeding', 'book series'].includes(aggTypeLower) &&
+        typeLower === 'conference paper'
+    ) {
         return 'Conference paper';
     }
 
-    // Journal Article หรือ Review Article
-    if (aggType === 'Journal' && (type === 'Article' || type === 'Review Article')) {
+    // Journal Article
+    if (
+        aggTypeLower === 'journal' &&
+        ['article', 'short survey', 'review', 'erratum', 'letter'].includes(typeLower)
+    ) {
         return 'Journal article';
     }
 
-    // Book Chapter (หรือ Book Series, Monograph)
-    if (aggType === 'Book' && type === 'Book chapter') return 'Book chapter';
-    if (aggType === 'Book Series' && type === 'Book Chapter') return 'Book chapter';
-    if (aggType === 'Monograph' && type === 'Book Chapter') return 'Book chapter';
-
-    if (!aggType || !type) {
-        return 'Unknown document type';
+    // Book Chapter
+    if (
+        ['book', 'book series'].includes(aggTypeLower) &&
+        ['book chapter', 'chapter'].includes(typeLower)
+    ) {
+        return 'Book chapter';
     }
 
-    return type;
+    // Whole Book
+    if (
+        aggTypeLower === 'book' &&
+        ['book', 'edited book'].includes(typeLower)
+    ) {
+        return 'Book';
+    }
+
+    // Editorial
+    if (typeLower === 'editorial') {
+        return 'Editorial';
+    }
+
+    // Note / Letter / Erratum (individual types)
+    if (['note', 'letter', 'erratum'].includes(typeLower)) {
+        return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
+    }
+
+    // Fallbacks
+    // if (!aggType && !type) {
+    //     return 'Unknown document type';
+    // }
+    return 'Other';
+
+    // Default: return raw type with first letter capitalized
+    return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
 }
 
 function formatContributors(pub) {
