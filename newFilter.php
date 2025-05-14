@@ -1,7 +1,7 @@
 <?php
 $baseUrl = "https://api.elsevier.com/content/search/scopus";
 $apiKey = "ae7e84e02386105442a7e6d7919f5d4e";
-$authorId = "57184355700"; // Saranya (57184355700), Komsan (23096399800) Scopus Author ID
+$authorId = "23096399800"; // Saranya (57184355700), Komsan (23096399800) Scopus Author ID
 
 function fetchPublications($baseUrl, $apiKey, $authorId)
 {
@@ -84,22 +84,7 @@ foreach ($publications as $pub) {
     $aggType = $pub['prism:aggregationType'] ?? '';
 
     // แสดงค่า aggType และ type ก่อนการจัดหมวดหมู่
-    echo "aggType: $aggType, type: $type<br>";
-    
-    // if ($aggType === 'Conference Proceeding' || $aggType === 'Book Series') {
-    //     if ($type === 'Conference Paper') {
-    //         $documentTypes[] = 'Conference paper';
-    //     }
-    // } // ok
-    // if ($aggType === 'Journal' && ($type === 'Article')) {
-    //     $documentTypes[] = 'Journal article';
-    // } // ok
-    // if ($aggType === 'Book' && $type === 'Book chapter') {
-    //     $documentTypes[] = 'Book chapter';
-    // } // ok
-    // if ($aggType === 'Book Series' && $type === 'Book Chapter') {
-    //     $documentTypes[] = 'Book chapter';
-    // } // ok
+    // echo "aggType: $aggType, type: $type<br>";
 
     // กรณี Conference paper
     if (
@@ -140,7 +125,7 @@ foreach ($publications as $pub) {
 
     // กรณี Note, Letter, etc.
     if (in_array($type, ['Note', 'Letter', 'Erratum'])) {
-        $documentTypes[] = $type;
+        $documentTypes[] =$type;
     }
 
     // เผื่อกรณีที่ไม่มีตรงเงื่อนไขข้างต้น
@@ -148,7 +133,7 @@ foreach ($publications as $pub) {
         $documentTypes[] = 'Other';
     }
 
-} // continue...
+}
 $documentTypes = array_unique($documentTypes);
 ?>
 
@@ -437,26 +422,6 @@ function getDocumentTypeFull(pub) {
     const type = pub['subtypeDescription'] || '';
     const aggType = pub['prism:aggregationType'] || '';
 
-    // // Conference Paper
-    // if ((aggType === 'Conference Proceeding' || aggType === 'Book Series') && (type === 'Conference Paper')) {
-    //     return 'Conference paper';
-    // } // ok
-
-    // // Journal Article
-    // if (aggType === 'Journal' && (type === 'Article')) {
-    //     return 'Journal article';
-    // } // ok
-
-    // // Book Chapter
-    // if (aggType === 'Book' && type === 'Book chapter') return 'Book chapter'; // ok
-    // if (aggType === 'Book Series' && type === 'Book Chapter') return 'Book chapter'; // ok
-
-    // if (!aggType || !type) {
-    //     return 'Unknown document type';
-    // }
-
-    // return type;
-
     // Normalize type for case-insensitive comparison
     const typeLower = type.toLowerCase();
     const aggTypeLower = aggType.toLowerCase();
@@ -504,13 +469,14 @@ function getDocumentTypeFull(pub) {
     }
 
     // Fallbacks
-    if (!aggType && !type) {
-        return 'Unknown document type';
-    }
+    // if (!aggType && !type) {
+    //     return 'Unknown document type';
+    // }
+    return 'Other';
 
     // Default: return raw type with first letter capitalized
     return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
-} // continue...
+}
 
 function formatContributors(pub) {
     if (pub.detailed_authors && pub.detailed_authors.length > 0) {
