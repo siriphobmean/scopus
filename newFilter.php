@@ -1,7 +1,45 @@
 <?php
 $baseUrl = "https://api.elsevier.com/content/search/scopus";
 $apiKey = "ae7e84e02386105442a7e6d7919f5d4e";
-$authorId = "23096399800"; // Saranya (57184355700), Komsan (23096399800) Scopus Author ID
+$authorId = "25628263400"; // Saranya (CPE: 57184355700), Komsan (CPE: 23096399800) Scopus Author ID
+
+// function fetchPublications($baseUrl, $apiKey, $authorId)
+// {
+//     $queryParams = http_build_query([
+//         "query" => "AU-ID($authorId)",
+//         "apiKey" => $apiKey,
+//         "view" => "COMPLETE",
+//     ]);
+
+//     $url = $baseUrl . "?" . $queryParams;
+
+//     $ch = curl_init();
+//     curl_setopt_array($ch, [
+//         CURLOPT_URL => $url,
+//         CURLOPT_RETURNTRANSFER => true,
+//         CURLOPT_HTTPHEADER => ["Accept: application/json"],
+//         CURLOPT_TIMEOUT => 10,
+//     ]);
+
+//     $response = curl_exec($ch);
+
+//     if ($response === false) {
+//         echo "cURL Error: " . curl_error($ch) . "\n";
+//         curl_close($ch);
+//         return [];
+//     }
+
+//     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+//     curl_close($ch);
+
+//     if ($httpCode === 200) {
+//         $data = json_decode($response, true);
+//         return $data["search-results"]["entry"] ?? [];
+//     } else {
+//         echo "Error: HTTP status code $httpCode\n";
+//         return [];
+//     }
+// } // Check: Ok, มีข้อจำกัดคือ ดึงได้สูงสุด 25 รายการ
 
 function fetchPublications($baseUrl, $apiKey, $authorId)
 {
@@ -26,7 +64,7 @@ function fetchPublications($baseUrl, $apiKey, $authorId)
     if ($response === false) {
         echo "cURL Error: " . curl_error($ch) . "\n";
         curl_close($ch);
-        return [];
+        return ['totalResults' => 0, 'publications' => []];
     }
 
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -34,12 +72,17 @@ function fetchPublications($baseUrl, $apiKey, $authorId)
 
     if ($httpCode === 200) {
         $data = json_decode($response, true);
-        return $data["search-results"]["entry"] ?? [];
+        $publications = $data["search-results"]["entry"] ?? [];
+        $totalResults = $data["search-results"]["opensearch:totalResults"] ?? 0;
+        return [
+            'totalResults' => $totalResults,
+            'publications' => $publications,
+        ];
     } else {
         echo "Error: HTTP status code $httpCode\n";
-        return [];
+        return ['totalResults' => 0, 'publications' => []];
     }
-} // Check: Ok, มีข้อจำกัดคือ ดึงได้สูงสุด 25 รายการ
+}
 
 // function fetchPublications($baseUrl, $apiKey, $authorId)
 // {
@@ -128,7 +171,13 @@ function extractAuthorsFromPublication($publication)
     return $authors;
 } // Check: Ok
 
-$publications = fetchPublications($baseUrl, $apiKey, $authorId);
+// $publications = fetchPublications($baseUrl, $apiKey, $authorId);
+$publicationsData = fetchPublications($baseUrl, $apiKey, $authorId);
+$totalResults = $publicationsData['totalResults'];
+$publications = $publicationsData['publications'];
+// echo '<pre>';
+// print_r($publications);
+// echo '</pre>';
 
 $publicationsWithAuthors = [];
 foreach ($publications as $publication) {
@@ -416,6 +465,13 @@ $documentTypes = array_unique($documentTypes);
             </div>
         </div>
     </div>
+
+    <?php if ($totalResults > 25): ?>
+        <div style="color:rgb(0, 0, 0); padding: 8px; text-align: start; margin-top: 10px; margin-bottom: -20px">
+            <text><strong>Note:</strong> Only 25 of the <?php echo $totalResults; ?> publications are currently displayed. To access the full list, please visit Elsevier's Scopus.</text>
+        </div>
+    <?php endif; ?>
+
     <div id="publication-container"></div>
 <?php else: ?>
     <p>No publications found or there was an error with the API request.</p>
