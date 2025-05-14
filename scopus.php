@@ -1,7 +1,7 @@
 <?php
 $baseUrl = "https://api.elsevier.com/content/search/scopus";
 $apiKey = "ae7e84e02386105442a7e6d7919f5d4e";
-$authorId = "25628263400"; // Saranya (CPE: 57184355700), Komsan (CPE: 23096399800) Scopus Author ID
+$authorId = "23096399800"; // Saranya (CPE: 57184355700), Komsan (CPE: 23096399800) Scopus Author ID
 
 function fetchPublications($baseUrl, $apiKey, $authorId)
 {
@@ -26,7 +26,7 @@ function fetchPublications($baseUrl, $apiKey, $authorId)
     if ($response === false) {
         echo "cURL Error: " . curl_error($ch) . "\n";
         curl_close($ch);
-        return ['totalResults' => 0, 'publications' => []];
+        return ["totalResults" => 0, "publications" => []];
     }
 
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -37,12 +37,12 @@ function fetchPublications($baseUrl, $apiKey, $authorId)
         $publications = $data["search-results"]["entry"] ?? [];
         $totalResults = $data["search-results"]["opensearch:totalResults"] ?? 0;
         return [
-            'totalResults' => $totalResults,
-            'publications' => $publications,
+            "totalResults" => $totalResults,
+            "publications" => $publications,
         ];
     } else {
         echo "Error: HTTP status code $httpCode\n";
-        return ['totalResults' => 0, 'publications' => []];
+        return ["totalResults" => 0, "publications" => []];
     }
 }
 
@@ -79,8 +79,8 @@ function extractAuthorsFromPublication($publication)
 } // Check: Ok
 
 $publicationsData = fetchPublications($baseUrl, $apiKey, $authorId);
-$totalResults = $publicationsData['totalResults'];
-$publications = $publicationsData['publications'];
+$totalResults = $publicationsData["totalResults"];
+$publications = $publicationsData["publications"];
 
 $publicationsWithAuthors = [];
 foreach ($publications as $publication) {
@@ -97,17 +97,32 @@ foreach ($publications as $pub) {
     $aggType = $pub["prism:aggregationType"] ?? "";
 
     // Conference paper
-    if (in_array($aggType, ["Conference Proceeding", "Book Series"]) && $type === "Conference Paper") {
+    if (
+        in_array($aggType, ["Conference Proceeding", "Book Series"]) &&
+        $type === "Conference Paper"
+    ) {
         $documentTypes[] = "Conference paper";
     }
 
     // Journal article
-    elseif ($aggType === "Journal" && in_array($type, ["Article", "Short Survey", "Review", "Erratum", "Letter"])) {
+    elseif (
+        $aggType === "Journal" &&
+        in_array($type, [
+            "Article",
+            "Short Survey",
+            "Review",
+            "Erratum",
+            "Letter",
+        ])
+    ) {
         $documentTypes[] = "Journal article";
     }
 
     // Book chapter
-    elseif (in_array($aggType, ["Book", "Book Series"]) && in_array($type, ["Book Chapter", "Chapter"])) {
+    elseif (
+        in_array($aggType, ["Book", "Book Series"]) &&
+        in_array($type, ["Book Chapter", "Chapter"])
+    ) {
         $documentTypes[] = "Book chapter";
     }
 
@@ -309,7 +324,7 @@ $documentTypes = array_unique($documentTypes);
             color: #085c77 !important;
         }
 
-        .hover-link::after {
+        /* .hover-link::after {
             content: '';
             position: absolute;
             width: 100%;
@@ -326,6 +341,23 @@ $documentTypes = array_unique($documentTypes);
 
         .hover-link:hover::after {
             transform: scaleX(1);
+        } */
+         .hover-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2.6px;
+            bottom: -2px;
+            left: 0;
+            background-color: #f26522;
+            transform-origin: left;
+            transition: width 0.4s ease-out;
+            display: block;
+            box-sizing: border-box;
+        }
+
+        .hover-link:hover::after {
+            width: 100%;
         }
     </style>
 </head>
