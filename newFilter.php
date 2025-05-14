@@ -39,7 +39,62 @@ function fetchPublications($baseUrl, $apiKey, $authorId)
         echo "Error: HTTP status code $httpCode\n";
         return [];
     }
-} // Check: Ok
+} // Check: Ok, มีข้อจำกัดคือ ดึงได้สูงสุด 25 รายการ
+
+// function fetchPublications($baseUrl, $apiKey, $authorId)
+// {
+//     $publications = [];
+//     $start = 0;
+//     $count = 25;
+
+//     while (true) {
+//         $queryParams = http_build_query([
+//             "query" => "AU-ID($authorId)",
+//             "apiKey" => $apiKey,
+//             "view" => "COMPLETE",
+//             "start" => $start,
+//             "count" => $count,
+//         ]);
+
+//         $url = $baseUrl . "?" . $queryParams;
+
+//         $ch = curl_init();
+//         curl_setopt_array($ch, [
+//             CURLOPT_URL => $url,
+//             CURLOPT_RETURNTRANSFER => true,
+//             CURLOPT_HTTPHEADER => ["Accept: application/json"],
+//             CURLOPT_TIMEOUT => 10,
+//         ]);
+
+//         $response = curl_exec($ch);
+
+//         if ($response === false) {
+//             echo "cURL Error: " . curl_error($ch) . "\n";
+//             curl_close($ch);
+//             break;
+//         }
+
+//         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+//         curl_close($ch);
+
+//         if ($httpCode === 200) {
+//             $data = json_decode($response, true);
+//             $entries = $data["search-results"]["entry"] ?? [];
+
+//             if (empty($entries)) {
+//                 break;
+//             }
+
+//             $publications = array_merge($publications, $entries);
+//             $start += $count;
+//         } else {
+//             echo "Error: HTTP status code $httpCode\n";
+//             break;
+//         }
+//     }
+
+//     return $publications;
+// } // show all, มีข้อจำกัดคือ ถ้ามันดึงบ่อย ต่อให้ทำ async แล้วก็แบ่งชุดการดึง ก็มีโอกาสโดน Block ด้วย Rate limit ได้
 
 function extractAuthorsFromPublication($publication)
 {
