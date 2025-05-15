@@ -146,6 +146,7 @@ if (empty($documentTypes)) {
     $documentTypes[] = "Other";
 } // Continue
 $documentTypes = array_unique($documentTypes);
+sort($documentTypes);
 ?>
 
 <!DOCTYPE html>
