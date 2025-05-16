@@ -1,7 +1,7 @@
 <?php
 $baseUrl = "https://api.elsevier.com/content/search/scopus";
 $apiKey = "ae7e84e02386105442a7e6d7919f5d4e";
-$authorId = "23096399800"; // Saranya (CPE: 57184355700), Komsan (CPE: 23096399800) Scopus Author ID
+$authorId = "23096399800"; // For test => Saranya (CPE: 57184355700), Komsan (CPE: 23096399800) Scopus Author ID
 
 function fetchPublications($baseUrl, $apiKey, $authorId)
 {
