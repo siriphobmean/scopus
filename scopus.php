@@ -5,45 +5,58 @@ $authorId = "23096399800"; // Saranya (CPE: 57184355700), Komsan (CPE: 230963998
 
 function fetchPublications($baseUrl, $apiKey, $authorId)
 {
-    $queryParams = http_build_query([
-        "query" => "AU-ID($authorId)",
-        "apiKey" => $apiKey,
-        "view" => "COMPLETE",
-    ]);
+    $allPublications = [];
+    $start = 0;
+    $count = 25;
 
-    $url = $baseUrl . "?" . $queryParams;
+    do {
+        $queryParams = http_build_query([
+            "query" => "AU-ID($authorId)",
+            "apiKey" => $apiKey,
+            "view" => "COMPLETE",
+            "count" => $count,
+            "start" => $start,
+        ]);
 
-    $ch = curl_init();
-    curl_setopt_array($ch, [
-        CURLOPT_URL => $url,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => ["Accept: application/json"],
-        CURLOPT_TIMEOUT => 10,
-    ]);
+        $url = $baseUrl . "?" . $queryParams;
 
-    $response = curl_exec($ch);
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => ["Accept: application/json"],
+            CURLOPT_TIMEOUT => 15,
+        ]);
 
-    if ($response === false) {
-        echo "cURL Error: " . curl_error($ch) . "\n";
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
-        return ["totalResults" => 0, "publications" => []];
-    }
 
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
+        if ($httpCode === 429) {
+            echo "Rate limit hit. Sleeping 60 seconds...\n";
+            sleep(60);
+            continue;
+        }
 
-    if ($httpCode === 200) {
+        if ($response === false || $httpCode !== 200) {
+            echo "Error: HTTP status $httpCode\n";
+            break;
+        }
+
         $data = json_decode($response, true);
-        $publications = $data["search-results"]["entry"] ?? [];
-        $totalResults = $data["search-results"]["opensearch:totalResults"] ?? 0;
-        return [
-            "totalResults" => $totalResults,
-            "publications" => $publications,
-        ];
-    } else {
-        echo "Error: HTTP status code $httpCode\n";
-        return ["totalResults" => 0, "publications" => []];
-    }
+        $entries = $data["search-results"]["entry"] ?? [];
+        $totalResults = (int) ($data["search-results"]["opensearch:totalResults"] ?? 0);
+
+        $allPublications = array_merge($allPublications, $entries);
+        $start += $count;
+
+        sleep(3);
+    } while ($start < $totalResults);
+
+    return [
+        "totalResults" => count($allPublications),
+        "publications" => $allPublications,
+    ];
 }
 
 function extractAuthorsFromPublication($publication)
@@ -402,9 +415,9 @@ sort($documentTypes);
         </div>
     </div>
 
-    <?php if ($totalResults > 25): ?>
+    <?php if ($totalResults > 200): ?>
         <div style="color:rgb(0, 0, 0); padding: 8px; text-align: start; margin-top: 10px; margin-bottom: -20px">
-            <text><strong>Note:</strong> Only 25 of the <?php echo $totalResults; ?> publications are currently displayed. To access the full list, please visit Elsevier's Scopus.</text>
+            <text><strong>Note:</strong> Only 200 of the <?php echo $totalResults; ?> publications are currently displayed. To access the full list, please visit Elsevier's Scopus.</text>
         </div>
     <?php endif; ?>
 
