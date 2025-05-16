@@ -1,7 +1,7 @@
 <?php
 $baseUrl = "https://api.elsevier.com/content/search/scopus";
 $apiKey = "ae7e84e02386105442a7e6d7919f5d4e";
-$authorId = "23096399800"; // For test => Saranya (CPE: 57184355700), Komsan (CPE: 23096399800) Scopus Author ID
+$authorId = "23096399800"; // Komsan (CPE: 23096399800) Scopus Author ID
 
 function fetchPublications($baseUrl, $apiKey, $authorId)
 {
@@ -104,60 +104,49 @@ foreach ($publications as $publication) {
     $publicationsWithAuthors[] = $publication;
 } // Check: Ok
 
+$documentTypeMap = [
+    // Journal Articles
+    'Article' => 'Journal article',
+    'Short Survey' => 'Journal article',
+    'Review' => 'Journal article',
+    'Erratum' => 'Journal article',
+    'Letter' => 'Journal article',
+    'Note' => 'Journal article',
+    'Article-in-Press' => 'Journal article',
+
+    // Conference Papers
+    'Conference Paper' => 'Conference paper',
+
+    // Book Chapters
+    'Book Chapter' => 'Book chapter',
+    'Chapter' => 'Book chapter',
+
+    // Books
+    'Book' => 'Book',
+    'Edited Book' => 'Book',
+
+    // Editorials
+    'Editorial' => 'Editorial',
+
+    // Data Papers
+    'Data Paper' => 'Data paper',
+
+    // Retracted Articles
+    'Retracted Article' => 'Retracted article',
+];
 $documentTypes = [];
+
 foreach ($publications as $pub) {
-    $type = $pub["subtypeDescription"] ?? "";
-    $aggType = $pub["prism:aggregationType"] ?? "";
+    $type = $pub['subtypeDescription'] ?? '';
+    $aggType = $pub['prism:aggregationType'] ?? '';
 
-    // Conference paper
-    if (
-        in_array($aggType, ["Conference Proceeding", "Book Series"]) &&
-        $type === "Conference Paper"
-    ) {
-        $documentTypes[] = "Conference paper";
-    }
-
-    // Journal article
-    elseif (
-        $aggType === "Journal" &&
-        in_array($type, [
-            "Article",
-            "Short Survey",
-            "Review",
-            "Erratum",
-            "Letter",
-        ])
-    ) {
-        $documentTypes[] = "Journal article";
-    }
-
-    // Book chapter
-    elseif (
-        in_array($aggType, ["Book", "Book Series"]) &&
-        in_array($type, ["Book Chapter", "Chapter"])
-    ) {
-        $documentTypes[] = "Book chapter";
-    }
-
-    // Whole book
-    elseif ($aggType === "Book" && in_array($type, ["Book", "Edited Book"])) {
-        $documentTypes[] = "Book";
-    }
-
-    // Editorial
-    elseif ($type === "Editorial") {
-        $documentTypes[] = "Editorial";
-    }
-
-    // Note, Letter, etc.
-    elseif (in_array($type, ["Note", "Letter", "Erratum"])) {
-        $documentTypes[] = $type;
+    if (isset($documentTypeMap[$type])) {
+        $documentTypes[] = $documentTypeMap[$type];
+    } else {
+        $documentTypes[] = $type ?: $aggType ?: 'Other';
     }
 }
 
-if (empty($documentTypes)) {
-    $documentTypes[] = "Other";
-} // Continue
 $documentTypes = array_unique($documentTypes);
 sort($documentTypes);
 ?>
@@ -338,24 +327,6 @@ sort($documentTypes);
             color: #085c77 !important;
         }
 
-        /* .hover-link::after {
-            content: '';
-            position: absolute;
-            width: 100%;
-            height: 2px;
-            bottom: -2px;
-            left: 0;
-            background-color: #f26522;
-            transform: scaleX(0);
-            transform-origin: left;
-            transition: transform 0.4s ease-out;
-            display: block;
-            box-sizing: border-box;
-        }
-
-        .hover-link:hover::after {
-            transform: scaleX(1);
-        } */
          .hover-link::after {
             content: '';
             position: absolute;
@@ -475,52 +446,58 @@ function getDocumentTypeFull(pub) {
     const type = pub['subtypeDescription'] || '';
     const aggType = pub['prism:aggregationType'] || '';
 
-    // Normalize type for case-insensitive comparison
-    const typeLower = type.toLowerCase();
-    const aggTypeLower = aggType.toLowerCase();
+    const documentTypeMap = {
+        // Journal Articles
+        'Article': 'Journal article',
+        'Short Survey': 'Journal article',
+        'Review': 'Journal article',
+        'Erratum': 'Journal article',
+        'Letter': 'Journal article',
+        'Note': 'Journal article',
+        'Article-in-Press': 'Journal article',
 
-    // Conference Paper
-    if (['conference proceeding', 'book series'].includes(aggTypeLower) && typeLower === 'conference paper') {
-        return 'Conference paper';
+        // Conference Papers
+        'Conference Paper': 'Conference paper',
+
+        // Book Chapters
+        'Book Chapter': 'Book chapter',
+        'Chapter': 'Book chapter',
+
+        // Books
+        'Book': 'Book',
+        'Edited Book': 'Book',
+
+        // Editorials
+        'Editorial': 'Editorial',
+
+        // Data Papers
+        'Data Paper': 'Data paper',
+
+        // Retracted Articles
+        'Retracted Article': 'Retracted article',
+    };
+
+    if (type in documentTypeMap) {
+        return documentTypeMap[type];
     }
 
-    // Journal Article
-    if (aggTypeLower === 'journal' && ['article', 'short survey', 'review', 'erratum', 'letter'].includes(typeLower)) {
-        return 'Journal article';
-    }
-
-    // Book Chapter
-    if (['book', 'book series'].includes(aggTypeLower) && ['book chapter', 'chapter'].includes(typeLower)) {
-        return 'Book chapter';
-    }
-
-    // Whole Book
-    if (aggTypeLower === 'book' && ['book', 'edited book'].includes(typeLower)) {
-        return 'Book';
-    }
-
-    // Editorial
-    if (typeLower === 'editorial') {
-        return 'Editorial';
-    }
-
-    // Note / Letter / Erratum (individual types)
-    if (['note', 'letter', 'erratum'].includes(typeLower)) {
-        return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase(); // Capitalize only first letter
-    }
-
-    // Fallback: Return default "Other" if no match
-    return 'Other';
-} // Continue
+    return type || aggType || 'Other';
+}
 
 function formatContributors(pub) {
     if (pub.detailed_authors && pub.detailed_authors.length > 0) {
-        const names = pub.detailed_authors.map(author => author['authname'] || '');
+        const names = pub.detailed_authors.map(author => {
+            const authid = author['authid'] || '';
+            const name = author['authname'] || '';
+            return authid && name
+                ? `<a href="https://www.scopus.com/authid/detail.uri?authorId=${authid}" class="hover-link" target="_blank">${name}</a>`
+                : name;
+        });
         return names.join(', ');
     }
 
     return pub['dc:creator'] || 'No contributors found';
-} // Check: Ok
+}
 
 function applyFiltersAndSort() {
     let filtered = [...publications];
